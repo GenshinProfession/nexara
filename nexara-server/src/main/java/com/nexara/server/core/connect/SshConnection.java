@@ -82,83 +82,81 @@ public class SshConnection implements ServerConnection, AutoCloseable {
         this.checkConnectionState(command);
         ChannelExec channel = null;
 
-        String var8;
         try {
             log.debug("执行命令: {}", command);
-            channel = (ChannelExec)this.session.openChannel("exec");
+            channel = (ChannelExec) this.session.openChannel("exec");
             channel.setCommand(command);
-            channel.setInputStream((InputStream)null);
+            channel.setInputStream(null);
+
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             ByteArrayOutputStream error = new ByteArrayOutputStream();
             channel.setOutputStream(output);
             channel.setErrStream(error);
+
             channel.connect();
             this.waitForChannelClosed(channel, command);
+
             int exitCode = channel.getExitStatus();
             String errorOutput = error.toString().trim();
             if (exitCode != 0) {
-                log.error("命令执行失败[代码:{}]: {}\n错误输出: {}", new Object[]{exitCode, command, errorOutput});
-                throw new CommandExecutionException(ConnectErrorCode.COMMAND_EXECUTION_FAILED, command, this.serverInfo.getServerId(), errorOutput);
+                log.error("命令执行失败[代码:{}]: {}\n错误输出: {}", exitCode, command, errorOutput);
+                throw new CommandExecutionException(
+                        ConnectErrorCode.COMMAND_EXECUTION_FAILED,
+                        command,
+                        this.serverInfo.getServerId(),
+                        errorOutput
+                );
             }
 
             String result = output.toString().trim();
             log.debug("命令执行成功: {}\n输出: {}", command, result);
-            var8 = result;
+            return result;
         } catch (JSchException e) {
             log.error("命令通道异常: {}", e.getMessage());
-            throw new CommandExecutionException(ConnectErrorCode.CHANNEL_FAILURE, command, this.serverInfo.getServerId(), e.getMessage());
+            throw new CommandExecutionException(
+                    ConnectErrorCode.CHANNEL_FAILURE,
+                    command,
+                    this.serverInfo.getServerId(),
+                    e.getMessage()
+            );
         } finally {
             if (channel != null) {
                 channel.disconnect();
             }
-
         }
-
-        return var8;
     }
 
     public void uploadFile(String localPath, String remotePath) throws FileTransferException {
         this.checkConnectionState("文件上传");
         ChannelSftp channel = null;
 
-        try {
-            InputStream input = Files.newInputStream(Paths.get(localPath));
+        try (InputStream input = Files.newInputStream(Paths.get(localPath))) {
+            log.info("开始上传文件: {} -> {}", localPath, remotePath);
+            channel = (ChannelSftp) this.session.openChannel("sftp");
+            channel.connect(30000);
+            channel.put(input, remotePath);
 
-            try {
-                log.info("开始上传文件: {} -> {}", localPath, remotePath);
-                channel = (ChannelSftp)this.session.openChannel("sftp");
-                channel.connect(30000);
-                channel.put(input, remotePath);
-                if (channel.stat(remotePath) == null) {
-                    throw new FileTransferException(ConnectErrorCode.FILE_UPLOAD_FAILED, this.serverInfo.getServerId(), "文件上传验证失败");
-                }
-
-                log.info("文件上传成功: {}", remotePath);
-            } catch (Throwable var13) {
-                if (input != null) {
-                    try {
-                        input.close();
-                    } catch (Throwable var12) {
-                        var13.addSuppressed(var12);
-                    }
-                }
-
-                throw var13;
+            if (channel.stat(remotePath) == null) {
+                throw new FileTransferException(
+                        ConnectErrorCode.FILE_UPLOAD_FAILED,
+                        this.serverInfo.getServerId(),
+                        "文件上传验证失败"
+                );
             }
 
-            if (input != null) {
-                input.close();
-            }
+            log.info("文件上传成功: {}", remotePath);
         } catch (Exception e) {
             log.error("文件上传异常: {}", e.getMessage());
-            throw new FileTransferException(ConnectErrorCode.FILE_UPLOAD_FAILED, this.serverInfo.getServerId(), "文件上传失败: " + e.getMessage());
+            throw new FileTransferException(
+                    ConnectErrorCode.FILE_UPLOAD_FAILED,
+                    this.serverInfo.getServerId(),
+                    "文件上传失败: " + e.getMessage()
+            );
         } finally {
             if (channel != null) {
                 channel.disconnect();
             }
-
         }
-
     }
 
     private void waitForChannelClosed(Channel channel, String command) throws CommandExecutionException {
@@ -166,19 +164,27 @@ public class SshConnection implements ServerConnection, AutoCloseable {
         long startTime = System.currentTimeMillis();
 
         try {
-            while(!channel.isClosed()) {
-                if (System.currentTimeMillis() - startTime > 35000L) {
+            while (!channel.isClosed()) {
+                if (System.currentTimeMillis() - startTime > timeoutMillis) {
                     log.error("命令执行超时: {}", command);
-                    throw new CommandExecutionException(ConnectErrorCode.COMMAND_TIMEOUT, command, this.serverInfo.getServerId(), "操作超时(35000ms)");
+                    throw new CommandExecutionException(
+                            ConnectErrorCode.COMMAND_TIMEOUT,
+                            command,
+                            this.serverInfo.getServerId(),
+                            "操作超时(" + timeoutMillis + "ms)"
+                    );
                 }
-
                 Thread.sleep(100L);
             }
-
-        } catch (InterruptedException var8) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("命令执行被中断: {}", command);
-            throw new CommandExecutionException(ConnectErrorCode.COMMAND_INTERRUPTED, command, this.serverInfo.getServerId(), "操作被中断");
+            throw new CommandExecutionException(
+                    ConnectErrorCode.COMMAND_INTERRUPTED,
+                    command,
+                    this.serverInfo.getServerId(),
+                    "操作被中断"
+            );
         }
     }
 

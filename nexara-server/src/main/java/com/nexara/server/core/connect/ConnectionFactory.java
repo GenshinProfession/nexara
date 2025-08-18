@@ -2,15 +2,20 @@ package com.nexara.server.core.connect;
 
 import com.nexara.server.polo.enums.ProtocolType;
 import com.nexara.server.polo.model.ServerInfo;
+
 import java.lang.reflect.Constructor;
 
 public class ConnectionFactory {
+
     public static ServerConnection createConnection(ServerInfo serverInfo) throws Exception {
         ProtocolType protocolType = serverInfo.getProtocol();
-        char var10000 = protocolType.name().charAt(0);
-        String connectionClassName = var10000 + protocolType.name().substring(1).toLowerCase() + "Connection";
-        Class<?> clazz = Class.forName("com.nexara.server.core.connect." + connectionClassName);
+
+        // 协议名首字母大写，其余小写，例如：SSH → SshConnection
+        String protocolName = protocolType.name().toLowerCase();
+        String className = protocolName.substring(0, 1).toUpperCase() + protocolName.substring(1) + "Connection";
+
+        Class<?> clazz = Class.forName("com.nexara.server.core.connect." + className);
         Constructor<?> constructor = clazz.getConstructor(ServerInfo.class);
-        return (ServerConnection)constructor.newInstance(serverInfo);
+        return (ServerConnection) constructor.newInstance(serverInfo);
     }
 }

@@ -28,3 +28,11 @@ server:
 mybatis:
   configuration:
     map-underscore-to-camel-case: true  # 开启驼峰命名自动映射
+
+knife4j:
+  enable: true
+  setting:
+    language: zh-CN  # 中文界面
+    enable-swagger-models: true  # 显示模型
+    enable-document-manage: true  # 允许文档管理
+    enable-version: true  # 显示版本号

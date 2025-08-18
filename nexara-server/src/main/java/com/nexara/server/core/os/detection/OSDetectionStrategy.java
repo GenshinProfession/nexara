@@ -6,5 +6,5 @@ import com.nexara.server.polo.model.OSInfo;
 public interface OSDetectionStrategy {
     String getDetectionCommand();
 
-    OSInfo parseOutput(String var1, String var2) throws CommandExecutionException;
+    OSInfo parseOutput(String output, String serverId) throws CommandExecutionException;
 }

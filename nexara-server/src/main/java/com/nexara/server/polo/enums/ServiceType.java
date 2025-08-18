@@ -14,7 +14,7 @@ public enum ServiceType {
     MYSQL("MySQL Database", 3306),
     REDIS("Redis Server", 6379),
     NACOS("Nacos Service Discovery", List.of(8848, 9848, 9849)),
-    COMMON("Common Port Range", 9000, 11000),
+    COMMON("Common Port Range", 9000, 10000),
     HTTP("HTTP Web Server", 80),
     HTTPS("HTTPS Web Server", 443),
     FTP("FTP Service", List.of(20, 21)),

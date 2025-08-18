@@ -5,11 +5,11 @@ import com.nexara.server.core.exception.connect.CommandExecutionException;
 import com.nexara.server.core.os.system.OperatingSystem;
 import com.nexara.server.core.os.system.ScriptExecutor;
 import com.nexara.server.polo.enums.ServiceType;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Paths;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @RequiredArgsConstructor
 @Log4j2
@@ -20,23 +20,24 @@ public class UbuntuOS implements OperatingSystem {
     public void installService(ServiceType serviceType) throws CommandExecutionException {
         String basePath = "scripts/ubuntu/" + serviceType.name().toLowerCase();
         ScriptExecutor executor = new ScriptExecutor(this.connection);
+
         String checkScript = basePath + "/check.sh";
-        if (Files.exists(Paths.get(checkScript), new LinkOption[0])) {
+        if (Files.exists(Paths.get(checkScript))) {
             try {
                 executor.runScript(checkScript);
                 log.info("{} 已安装，跳过安装", serviceType);
                 return;
-            } catch (CommandExecutionException var6) {
+            } catch (CommandExecutionException e) {
                 log.info("{} 未安装，开始安装...", serviceType);
             }
         }
 
         String installScript = basePath + "/install.sh";
-        if (!Files.exists(Paths.get(installScript), new LinkOption[0])) {
+        if (!Files.exists(Paths.get(installScript))) {
             throw new RuntimeException("安装脚本不存在: " + installScript);
-        } else {
-            executor.runScript(installScript);
-            log.info("{} 安装完成", serviceType);
         }
+
+        executor.runScript(installScript);
+        log.info("{} 安装完成", serviceType);
     }
 }
