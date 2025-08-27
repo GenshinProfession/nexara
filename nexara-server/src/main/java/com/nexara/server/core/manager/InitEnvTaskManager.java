@@ -1,4 +1,4 @@
-package com.nexara.server.util.manager;
+package com.nexara.server.core.manager;
 
 import com.nexara.server.core.connect.ConnectionFactory;
 import com.nexara.server.core.connect.product.ServerConnection;

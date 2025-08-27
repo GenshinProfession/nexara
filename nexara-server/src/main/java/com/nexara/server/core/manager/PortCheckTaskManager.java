@@ -1,4 +1,4 @@
-package com.nexara.server.util.manager;
+package com.nexara.server.core.manager;
 
 import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.polo.enums.ServiceType;

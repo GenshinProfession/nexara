@@ -2,8 +2,8 @@ package com.nexara.server.service;
 
 import com.nexara.server.polo.enums.ServiceType;
 import com.nexara.server.polo.model.InitializationEnvProgress;
-import com.nexara.server.util.manager.InitEnvTaskManager;
-import com.nexara.server.util.manager.PortCheckTaskManager;
+import com.nexara.server.core.manager.InitEnvTaskManager;
+import com.nexara.server.core.manager.PortCheckTaskManager;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.nexara.server.util.manager;
+package com.nexara.server.core.manager;
 
 public class DockerfileProduceManager {
 

@@ -1,7 +1,7 @@
 package com.nexara.server.service;
 
 import com.nexara.server.util.AjaxResult;
-import com.nexara.server.util.manager.UploadTaskManager;
+import com.nexara.server.core.manager.UploadTaskManager;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;

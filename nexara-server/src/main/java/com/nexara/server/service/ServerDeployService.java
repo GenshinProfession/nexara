@@ -2,8 +2,8 @@ package com.nexara.server.service;
 
 import com.nexara.server.polo.enums.CodeLanguage;
 import com.nexara.server.util.AjaxResult;
-import com.nexara.server.util.manager.PackageManager;
-import com.nexara.server.util.manager.PortCheckTaskManager;
+import com.nexara.server.core.manager.PackageManager;
+import com.nexara.server.core.manager.PortCheckTaskManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
