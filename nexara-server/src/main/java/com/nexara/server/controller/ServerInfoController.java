@@ -24,8 +24,8 @@ public class ServerInfoController {
     }
 
     @GetMapping
-    public AjaxResult getAllServerInfo() {
-        return AjaxResult.success().put("data", this.serverInfoService.getAllServerInfo());
+    public AjaxResult getAllServerInfo() throws Exception {
+        return serverInfoService.getAllServerInfo();
     }
 
     @PutMapping

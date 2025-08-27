@@ -28,6 +28,9 @@ server:
 mybatis:
   configuration:
     map-underscore-to-camel-case: true  # 开启驼峰命名自动映射
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.nexara.server.polo.model
+
 
 knife4j:
   enable: true

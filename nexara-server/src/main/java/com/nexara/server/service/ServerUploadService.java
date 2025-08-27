@@ -1,9 +1,9 @@
 package com.nexara.server.service;
 
 import com.nexara.server.util.AjaxResult;
-import com.nexara.server.util.task.UploadTaskManager;
+import com.nexara.server.util.manager.UploadTaskManager;
 import java.util.List;
-import lombok.Generated;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -13,19 +13,25 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @Log4j2
 public class ServerUploadService {
+
     private final UploadTaskManager uploadTaskManager;
 
     public AjaxResult initUploadSession(String fileHash, String fileName, Integer totalChunks, Long chunkSize) {
-        this.uploadTaskManager.initTask(fileHash, fileName, totalChunks, chunkSize);
+        uploadTaskManager.initTask(fileHash, fileName, totalChunks, chunkSize);
         return AjaxResult.success();
     }
 
     public AjaxResult fetchUploadStatus(String fileHash) {
-        return AjaxResult.success().put("data", this.uploadTaskManager.getUploadProgress(fileHash));
+        return AjaxResult.success().put("data", uploadTaskManager.getUploadProgress(fileHash));
     }
 
     public AjaxResult uploadChunkBatch(String fileHash, List<MultipartFile> chunks) {
-        this.uploadTaskManager.batchUpload(fileHash, chunks);
+        uploadTaskManager.batchUpload(fileHash, chunks);
         return AjaxResult.success();
+    }
+
+    public AjaxResult uploadRemoteFile(String serverId, String filePath) {
+        uploadTaskManager.uploadRemoteFile(serverId,filePath);
+        return AjaxResult.success("上传成功！");
     }
 }

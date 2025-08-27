@@ -1,21 +1,32 @@
 package com.nexara.server.core.connect;
 
+import com.nexara.server.core.connect.product.ServerConnection;
+import com.nexara.server.core.connect.provider.ConnectionProvider;
+import com.nexara.server.core.exception.connect.ConnectionException;
 import com.nexara.server.polo.enums.ProtocolType;
 import com.nexara.server.polo.model.ServerInfo;
+import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Constructor;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+@Component
 public class ConnectionFactory {
 
-    public static ServerConnection createConnection(ServerInfo serverInfo) throws Exception {
-        ProtocolType protocolType = serverInfo.getProtocol();
+    private final Map<ProtocolType, ConnectionProvider> providerMap = new ConcurrentHashMap<>();
 
-        // 协议名首字母大写，其余小写，例如：SSH → SshConnection
-        String protocolName = protocolType.name().toLowerCase();
-        String className = protocolName.substring(0, 1).toUpperCase() + protocolName.substring(1) + "Connection";
+    public ConnectionFactory(List<ConnectionProvider> providers) {
+        for (ConnectionProvider provider : providers) {
+            providerMap.put(provider.getSupportedProtocol(), provider);
+        }
+    }
 
-        Class<?> clazz = Class.forName("com.nexara.server.core.connect." + className);
-        Constructor<?> constructor = clazz.getConstructor(ServerInfo.class);
-        return (ServerConnection) constructor.newInstance(serverInfo);
+    public ServerConnection createConnection(ServerInfo serverInfo) throws ConnectionException {
+        ConnectionProvider provider = providerMap.get(serverInfo.getProtocol());
+        if (provider == null) {
+            throw new IllegalArgumentException("不支持的连接协议: " + serverInfo.getProtocol());
+        }
+        return provider.create(serverInfo);
     }
 }

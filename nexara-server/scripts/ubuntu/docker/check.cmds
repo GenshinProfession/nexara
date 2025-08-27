@@ -1,0 +1,5 @@
+# 检查 Docker 是否已安装
+command -v docker &> /dev/null
+
+# 显示已安装版本
+docker --version

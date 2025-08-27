@@ -1,0 +1,5 @@
+# 检查 Node Exporter 是否已安装
+dpkg -l | grep prometheus-node-exporter
+
+# 检查 Node Exporter 服务是否运行
+systemctl is-active prometheus-node-exporter

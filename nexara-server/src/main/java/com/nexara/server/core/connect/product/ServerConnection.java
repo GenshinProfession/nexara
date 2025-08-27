@@ -1,4 +1,4 @@
-package com.nexara.server.core.connect;
+package com.nexara.server.core.connect.product;
 
 import com.nexara.server.core.exception.connect.CommandExecutionException;
 import com.nexara.server.core.exception.connect.FileTransferException;

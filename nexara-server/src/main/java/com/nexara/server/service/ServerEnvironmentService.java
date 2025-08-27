@@ -2,8 +2,8 @@ package com.nexara.server.service;
 
 import com.nexara.server.polo.enums.ServiceType;
 import com.nexara.server.polo.model.InitializationEnvProgress;
-import com.nexara.server.util.task.InitEnvTaskManager;
-import com.nexara.server.util.task.PortCheckTaskManager;
+import com.nexara.server.util.manager.InitEnvTaskManager;
+import com.nexara.server.util.manager.PortCheckTaskManager;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -18,22 +18,22 @@ public class ServerEnvironmentService {
     private final PortCheckTaskManager portCheckTaskManager;
 
     public String startInitialization(String serverId, List<ServiceType> services) {
-        return this.initEnvTaskManager.submitInitTask(serverId, services);
+        return initEnvTaskManager.submitInitTask(serverId, services);
     }
 
     public InitializationEnvProgress getProgress(String taskId) {
-        return this.initEnvTaskManager.getProgress(taskId);
+        return initEnvTaskManager.getProgress(taskId);
     }
 
     public void cancelInitialization(String taskId) {
-        this.initEnvTaskManager.cancelTask(taskId);
+        initEnvTaskManager.cancelTask(taskId);
     }
 
     public String checkPort(String serverId, List<ServiceType> services) {
-        return this.portCheckTaskManager.submitCheckTask(serverId, services);
+        return portCheckTaskManager.submitCheckTask(serverId, services);
     }
 
     public Map<String, Object> getCheckResult(String taskId) {
-        return this.portCheckTaskManager.getCheckResult(taskId);
+        return portCheckTaskManager.getCheckResult(taskId);
     }
 }

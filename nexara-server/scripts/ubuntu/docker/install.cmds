@@ -1,0 +1,52 @@
+# 1.1 卸载旧版本（如有）
+sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
+
+# 1.2 安装依赖工具
+sudo apt-get update
+sudo apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+# 1.3 添加 Docker 官方 GPG 密钥（国内镜像站加速，使用阿里云）
+curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# 1.4 设置 Docker 镜像源（阿里云加速）
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://mirrors.aliyun.com/docker-ce/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# 1.5 安装 Docker 引擎
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+
+# 1.6 启动 Docker
+sudo systemctl daemon-reload
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 1.7 配置国内镜像加速
+sudo tee /etc/docker/daemon.json <<EOF
+{
+  "registry-mirrors": [
+    "https://registry.cn-hangzhou.aliyuncs.com",
+    "https://mirror.ccs.tencentyun.com",
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://docker.xuanyuan.me"
+  ]
+}
+EOF
+
+# 1.8 重启 Docker 生效
+sudo systemctl restart docker
+
+# 1.9 验证安装
+docker --version
+
+# 1.10 权限配置（免 sudo 使用 Docker）
+sudo usermod -aG docker $USER
+newgrp docker
+
+# 1.11 管理 Docker 服务（常用命令提示）
+sudo systemctl restart docker

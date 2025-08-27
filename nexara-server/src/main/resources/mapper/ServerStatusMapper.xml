@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nexara.server.mapper.ServerStatusMapper">
+
+    <resultMap id="BaseResultMap" type="com.nexara.server.polo.model.ServerStatus">
+        <id property="serverId" column="server_id" />
+        <result property="cpuCores" column="cpu_cores" />
+        <result property="memorySizeGb" column="memory_size_gb" />
+        <result property="memoryUsagePercent" column="memory_usage_percent" />
+        <result property="diskSizeGb" column="disk_size_gb" />
+        <result property="diskUsagePercent" column="disk_usage_percent" />
+        <result property="networkStatus" column="network_status" />
+        <result property="loadStatus" column="load_status" />
+        <result property="lastUpdated" column="last_updated" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        server_id, cpu_cores, memory_size_gb, memory_usage_percent,
+        disk_size_gb, disk_usage_percent, network_status, load_status, last_updated
+    </sql>
+
+    <select id="selectByServerId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from server_status
+        where server_id = #{serverId}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from server_status
+        order by last_updated desc
+    </select>
+
+    <insert id="insert" parameterType="com.nexara.server.polo.model.ServerStatus">
+        insert into server_status (
+            server_id, cpu_cores, memory_size_gb, memory_usage_percent,
+            disk_size_gb, disk_usage_percent, network_status, load_status, last_updated
+        ) values (
+                     #{serverId}, #{cpuCores}, #{memorySizeGb}, #{memoryUsagePercent},
+                     #{diskSizeGb}, #{diskUsagePercent}, #{networkStatus}, #{loadStatus}, #{lastUpdated}
+                 )
+    </insert>
+
+    <update id="update" parameterType="com.nexara.server.polo.model.ServerStatus">
+        update server_status
+        <set>
+            <if test="cpuCores != null">cpu_cores = #{cpuCores},</if>
+            <if test="memorySizeGb != null">memory_size_gb = #{memorySizeGb},</if>
+            <if test="memoryUsagePercent != null">memory_usage_percent = #{memoryUsagePercent},</if>
+            <if test="diskSizeGb != null">disk_size_gb = #{diskSizeGb},</if>
+            <if test="diskUsagePercent != null">disk_usage_percent = #{diskUsagePercent},</if>
+            <if test="networkStatus != null">network_status = #{networkStatus},</if>
+            <if test="loadStatus != null">load_status = #{loadStatus},</if>
+            <if test="lastUpdated != null">last_updated = #{lastUpdated},</if>
+        </set>
+        where server_id = #{serverId}
+    </update>
+
+    <delete id="deleteByServerId">
+        delete from server_status
+        where server_id = #{serverId}
+    </delete>
+
+    <!-- 删除过期数据 -->
+    <delete id="deleteOldData">
+        DELETE FROM server_status
+        WHERE last_updated &lt; datetime('now', '-' || #{days} || ' days') <!-- 将 < 替换为 &lt; -->
+    </delete>
+
+    <select id="selectByLoadStatus" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from server_status
+        where load_status = #{loadStatus}
+        order by last_updated desc
+    </select>
+
+    <select id="selectByNetworkStatus" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from server_status
+        where network_status = #{networkStatus}
+        order by last_updated desc
+    </select>
+
+    <select id="selectHighLoadServers" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from server_status
+        where load_status in ('high', 'critical')
+        order by last_updated desc
+    </select>
+
+    <select id="selectByDiskUsageThreshold" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from server_status
+        where disk_usage_percent >= #{threshold}
+        order by disk_usage_percent desc
+    </select>
+
+    <select id="selectByMemoryUsageThreshold" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from server_status
+        where memory_usage_percent >= #{threshold}
+        order by memory_usage_percent desc
+    </select>
+
+    <select id="existsByServerId" resultType="boolean">
+        select count(1)
+        from server_status
+        where server_id = #{serverId}
+    </select>
+
+</mapper>

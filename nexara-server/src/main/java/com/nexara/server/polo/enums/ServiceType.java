@@ -10,7 +10,7 @@ import lombok.Generated;
 public enum ServiceType {
     DOCKER("Docker Engine", 2375),
     NGINX("Nginx Web Server", 80),
-    NETCAT("Netcat Utility", 8080),
+    PROMETHEUS("Prometheus Node Exporter", 9100),
     MYSQL("MySQL Database", 3306),
     REDIS("Redis Server", 6379),
     NACOS("Nacos Service Discovery", List.of(8848, 9848, 9849)),

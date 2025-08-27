@@ -1,4 +1,4 @@
-package com.nexara.server.util.task;
+package com.nexara.server.util.manager;
 
 import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.polo.enums.ServiceType;
@@ -183,6 +183,20 @@ public class PortCheckTaskManager {
             log.info("端口检测异常: host={}, port={}, ex={}", host, port, e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * 直接检测指定端口是否有服务
+     * @param serverId 服务器ID
+     * @param port 端口号
+     * @return true = 端口可达（存在服务或至少未被防火墙拦截），false = 端口不可达
+     */
+    public boolean checkSinglePort(String serverId, int port) {
+        String host = getServerHost(serverId);
+        log.info("单端口检测: serverId={}, host={}, port={}", serverId, host, port);
+        boolean result = tryConnect(host, port);
+        log.info("单端口检测结果: host={}, port={}, result={}", host, port, result);
+        return result;
     }
 
     /**

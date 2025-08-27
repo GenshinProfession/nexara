@@ -1,9 +1,9 @@
-package com.nexara.server.util.task;
+package com.nexara.server.util.manager;
 
 import com.nexara.server.core.connect.ConnectionFactory;
-import com.nexara.server.core.connect.ServerConnection;
+import com.nexara.server.core.connect.product.ServerConnection;
 import com.nexara.server.core.os.OSFactory;
-import com.nexara.server.core.os.system.OperatingSystem;
+import com.nexara.server.core.os.system.product.OperatingSystem;
 import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.polo.enums.ServiceType;
 import com.nexara.server.polo.enums.TaskStatus;
@@ -31,8 +31,11 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class InitEnvTaskManager {
+
     private final RedisUtils redisUtils;
     private final ServerInfoMapper serverInfoMapper;
+    private final ConnectionFactory connectionFactory;
+    private final OSFactory osFactory;
 
     private static final String TASK_KEY_PREFIX = "init_env:";
     private static final long TASK_EXPIRATION_DAYS = 3L;
@@ -48,9 +51,9 @@ public class InitEnvTaskManager {
                     throw new RuntimeException("服务器信息不存在: " + id);
                 }
 
-                ServerConnection conn = ConnectionFactory.createConnection(info);
-                OperatingSystem os = OSFactory.createOS(conn);
-                return new ServerResources(conn, os);
+                ServerConnection con = connectionFactory.createConnection(info);
+                OperatingSystem os = osFactory.createOS(con);
+                return new ServerResources(con, os);
             } catch (Exception e) {
                 throw new RuntimeException("创建服务器资源失败: " + e.getMessage(), e);
             }
@@ -73,10 +76,12 @@ public class InitEnvTaskManager {
         createTask(taskId, services);
 
         executor.execute(() -> {
+            ServiceType currentType = null;
             try {
                 ServerResources resources = getServerResources(serverId);
 
                 for (ServiceType type : services) {
+                    currentType = type;
                     updateTaskStatus(taskId, type, TaskStatus.RUNNING);
                     resources.os().installService(type);
                     updateTaskStatus(taskId, type, TaskStatus.COMPLETED);
@@ -85,6 +90,9 @@ public class InitEnvTaskManager {
                 completeTask(taskId);
             } catch (Exception e) {
                 log.error("任务[{}]执行失败", taskId, e);
+                if (currentType != null) {
+                    updateTaskStatus(taskId, currentType, TaskStatus.FAILED);
+                }
                 failTask(taskId, e.getMessage());
             } finally {
                 cleanupResources(serverId);
@@ -203,6 +211,7 @@ public class InitEnvTaskManager {
 
         return InitializationEnvProgress.builder()
                 .taskId(taskId)
+                .overallStatus(task.getStatus())
                 .progress(progressPercent)
                 .services(task.getServices())
                 .startTime(task.getStartTime())

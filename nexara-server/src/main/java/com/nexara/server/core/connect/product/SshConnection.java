@@ -1,4 +1,4 @@
-package com.nexara.server.core.connect;
+package com.nexara.server.core.connect.product;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;

@@ -1,6 +1,6 @@
-package com.nexara.server.core.os.system;
+package com.nexara.server.core.os;
 
-import com.nexara.server.core.connect.ServerConnection;
+import com.nexara.server.core.connect.product.ServerConnection;
 import com.nexara.server.core.exception.connect.CommandExecutionException;
 import com.nexara.server.polo.enums.ConnectErrorCode;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,10 @@
-package com.nexara.server.util.task;
+package com.nexara.server.util.manager;
 
+import com.nexara.server.core.connect.ConnectionFactory;
+import com.nexara.server.core.connect.product.ServerConnection;
+import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.polo.enums.UploadStatus;
+import com.nexara.server.polo.model.ServerInfo;
 import com.nexara.server.polo.model.UploadProgress;
 import com.nexara.server.polo.model.UploadTask;
 import com.nexara.server.util.RedisUtils;
@@ -9,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -27,6 +32,10 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class UploadTaskManager {
+
+    private final ServerInfoMapper serverInfoMapper;
+    private final ConnectionFactory connectionFactory;
+
     private final RedisUtils redisUtils;
     private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
     private static final String REDIS_KEY_PREFIX = "upload:";
@@ -185,4 +194,22 @@ public class UploadTaskManager {
 
         return Integer.parseInt(parts[1]);
     }
+
+    public void uploadRemoteFile(String serverId, String filePath) {
+        ServerInfo serverInfo = serverInfoMapper.findByServerId(serverId);
+
+        if(serverInfo == null){
+            throw new RuntimeException("服务器不存在");
+        }
+
+        try {
+            ServerConnection connection = connectionFactory.createConnection(serverInfo);
+            File file = new File(filePath);
+            connection.uploadFile(filePath,"/nexara" + file.getName());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
 }
