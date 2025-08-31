@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <title>分片上传测试</title>
+    <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<h2>大文件分片上传 Demo</h2>
+
+<form id="uploadForm">
+    <input type="file" id="fileInput" required/>
+    <br><br>
+    <label>分片大小 (KB)：</label>
+    <input type="number" id="chunkSize" value="512" min="64"/>
+    <br><br>
+    <button type="submit">开始上传</button>
+    <button type="button" id="pauseBtn" disabled>暂停</button>
+</form>
+
+<div id="progressBox" style="display:none;">
+    <p>文件 Hash：<span id="fileHash"></span></p>
+    <p>总大小：<span id="totalSize"></span></p>
+    <p>总分片：<span id="totalChunks"></span></p>
+    <p>已上传：<span id="uploadedChunks">0</span></p>
+    <p>进度：<span id="percent">0</span>%</p>
+    <div class="bar"><div id="barInner"></div></div>
+</div>
+
+<pre id="log"></pre>
+
+<script type="module" src="upload.js"></script>
+</body>
+</html>
