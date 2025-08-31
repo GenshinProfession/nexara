@@ -61,6 +61,11 @@ public class UploadTaskManager {
                             .build())
                     .build();
 
+            log.info("初始化FileHash：" + task.getFileHash());
+            log.info("初始化文件名：" + task.getFileName());
+            log.info("初始化分片大小：" + task.getChunkSize());
+            log.info("初始化总分片数：" + task.getTotalChunks());
+            log.info("初始化上传进度: " + task.getUploadProgress());
             redisUtils.set(REDIS_KEY_PREFIX + fileHash, task);
         } catch (IOException e) {
             throw new RuntimeException("初始化上传任务失败", e);
@@ -68,7 +73,10 @@ public class UploadTaskManager {
     }
 
     public UploadTask getUploadProgress(String fileHash) {
-        return (UploadTask) redisUtils.get(REDIS_KEY_PREFIX + fileHash);
+        UploadTask uploadTask;
+        uploadTask = (UploadTask) redisUtils.get(REDIS_KEY_PREFIX + fileHash);
+        log.info("上传进度: " + uploadTask.getUploadProgress());
+        return uploadTask;
     }
 
     public void batchUpload(String fileHash, List<MultipartFile> chunks) {
@@ -106,8 +114,10 @@ public class UploadTaskManager {
         int chunkIndex = extractChunkIndex(chunk);
         Path chunkPath = Paths.get(FINAL_DIR, fileHash, "temp", String.valueOf(chunkIndex));
         Files.createDirectories(chunkPath.getParent());
+
         chunk.transferTo(chunkPath);
         updateUploadProgress(fileHash, chunkIndex);
+        System.out.println("分片已写入：" + chunkPath.toAbsolutePath());
         return chunkIndex;
     }
 
@@ -182,30 +192,26 @@ public class UploadTaskManager {
     }
 
     private int extractChunkIndex(MultipartFile chunk) {
-        String filename = chunk.getOriginalFilename();
-        if (filename == null) {
+        String name = chunk.getOriginalFilename();// IMG_..._0
+        if (name == null) {
             throw new IllegalArgumentException("分片文件名不能为空");
         }
-
-        String[] parts = filename.split("_");
-        if (parts.length < 2) {
-            throw new IllegalArgumentException("无效的分片文件名格式: " + filename);
-        }
-
-        return Integer.parseInt(parts[1]);
+        int lastUnderscore = name.lastIndexOf('_');
+        return Integer.parseInt(name.substring(lastUnderscore + 1));
     }
+
 
     public void uploadRemoteFile(String serverId, String filePath) {
         ServerInfo serverInfo = serverInfoMapper.findByServerId(serverId);
 
-        if(serverInfo == null){
+        if (serverInfo == null) {
             throw new RuntimeException("服务器不存在");
         }
 
         try {
             ServerConnection connection = connectionFactory.createConnection(serverInfo);
             File file = new File(filePath);
-            connection.uploadFile(filePath,"/nexara" + file.getName());
+            connection.uploadFile(filePath, "/nexara" + file.getName());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
