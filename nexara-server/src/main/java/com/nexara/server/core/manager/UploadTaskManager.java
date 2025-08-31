@@ -87,7 +87,7 @@ public class UploadTaskManager {
 
         List<MultipartFile> filteredChunks = chunks.stream()
                 .filter(chunk -> !task.getUploadProgress().getUploadedChunks().contains(extractChunkIndex(chunk)))
-                .collect(Collectors.toList());
+                .toList();
 
         List<CompletableFuture<Integer>> futures = filteredChunks.stream()
                 .map(chunk -> CompletableFuture.supplyAsync(() -> {
@@ -98,7 +98,7 @@ public class UploadTaskManager {
                         return -1;
                     }
                 }, virtualThreadExecutor))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private void handleUploadError(String fileHash, MultipartFile chunk, Exception e) {
