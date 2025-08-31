@@ -39,7 +39,7 @@ public class UploadTaskManager {
     private final RedisUtils redisUtils;
     private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
     private static final String REDIS_KEY_PREFIX = "upload:";
-    private static final String FINAL_DIR = "/file/";
+    private static final String FINAL_DIR = System.getProperty("user.dir") + "/file/";
 
     public void initTask(String fileHash, String fileName, Integer totalChunks, Long chunkSize) {
         try {
@@ -155,6 +155,7 @@ public class UploadTaskManager {
 
     private void mergeChunks(UploadTask task) {
         try {
+            log.info("正在合并");
             Path finalPath = Paths.get(FINAL_DIR, task.getFileHash(), task.getFileName());
             Path tempDir = Paths.get(FINAL_DIR, task.getFileHash(), "temp");
             Files.createDirectories(finalPath.getParent());
