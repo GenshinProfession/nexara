@@ -27,6 +27,6 @@ public class ConnectionFactory {
         if (provider == null) {
             throw new IllegalArgumentException("不支持的连接协议: " + serverInfo.getProtocol());
         }
-        return provider.create(serverInfo);
+        return provider.getConnection(serverInfo);
     }
 }

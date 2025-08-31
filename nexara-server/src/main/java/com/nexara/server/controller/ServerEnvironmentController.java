@@ -28,21 +28,21 @@ public class ServerEnvironmentController {
     public AjaxResult startInitialization(
             @RequestParam("serverId") String serverId,
             @RequestBody List<ServiceType> services) {
-        String taskId = this.serverEnvironmentService.startInitialization(serverId, services);
+        String taskId = serverEnvironmentService.startInitialization(serverId, services);
         return AjaxResult.success("初始化任务已开始").put("taskId", taskId);
     }
 
     @GetMapping("/progress/{taskId}")
     @Operation(summary = "轮询初始化环境进度")
     public AjaxResult getProgress(@PathVariable("taskId") String taskId) {
-        InitializationEnvProgress progress = this.serverEnvironmentService.getProgress(taskId);
+        InitializationEnvProgress progress = serverEnvironmentService.getProgress(taskId);
         return AjaxResult.success("任务进度").put("data", progress);
     }
 
     @PostMapping("/cancel/{taskId}")
     @Operation(summary = "取消初始化")
     public AjaxResult cancelInitialization(@PathVariable("taskId") String taskId) {
-        this.serverEnvironmentService.cancelInitialization(taskId);
+        serverEnvironmentService.cancelInitialization(taskId);
         return AjaxResult.success("任务已取消");
     }
 
@@ -51,14 +51,14 @@ public class ServerEnvironmentController {
     public AjaxResult checkPort(
             @RequestParam("serverId") String serverId,
             @RequestBody List<ServiceType> services) {
-        String taskId = this.serverEnvironmentService.checkPort(serverId, services);
+        String taskId = serverEnvironmentService.checkPort(serverId, services);
         return AjaxResult.success("端口检测任务已提交").put("taskId", taskId);
     }
 
     @GetMapping("/check-result/{taskId}")
     @Operation(summary = "轮询端口进度")
     public AjaxResult getCheckResult(@PathVariable("taskId") String taskId) {
-        Map<String, Object> result = this.serverEnvironmentService.getCheckResult(taskId);
+        Map<String, Object> result = serverEnvironmentService.getCheckResult(taskId);
         return result == null ? AjaxResult.error("任务不存在或已过期") : AjaxResult.success().put("data", result);
     }
 }

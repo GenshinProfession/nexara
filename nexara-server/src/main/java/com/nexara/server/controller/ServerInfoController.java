@@ -20,7 +20,7 @@ public class ServerInfoController {
 
     @GetMapping({"/{serverId}"})
     public AjaxResult getServerInfo(@PathVariable String serverId) {
-        return AjaxResult.success().put("data", this.serverInfoService.getServerInfoByServerId(serverId));
+        return AjaxResult.success().put("data", serverInfoService.getServerInfoByServerId(serverId));
     }
 
     @GetMapping
@@ -30,12 +30,12 @@ public class ServerInfoController {
 
     @PutMapping
     public AjaxResult updateServerInfo(@RequestBody ServerInfo serverInfo) {
-        return AjaxResult.success().put("data", this.serverInfoService.updateServerInfo(serverInfo));
+        return AjaxResult.success().put("data", serverInfoService.updateServerInfo(serverInfo));
     }
 
     @DeleteMapping({"/{serverId}"})
     public AjaxResult deleteServerInfo(@PathVariable String serverId) {
-        this.serverInfoService.deleteServerInfoByServerId(serverId);
+        serverInfoService.deleteServerInfoByServerId(serverId);
         return AjaxResult.success();
     }
 }

@@ -19,6 +19,7 @@ public enum ConnectErrorCode {
     CONNECTION_FAILED(1013, "连接失败"),
     PORT_FILTERED(1014, "端口被防火墙过滤/丢弃（连接超时）"),
     PORT_NOT_LISTENING(1015, "端口无服务（连接被拒绝）"),
+    POOL_NOT_REACHABLE(1016, "线程池不可达"),
     COMMAND_TIMEOUT(2001, "命令执行超时"),
     COMMAND_INTERRUPTED(2002, "命令执行被中断"),
     COMMAND_EXECUTION_FAILED(2003, "命令执行失败"),

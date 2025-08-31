@@ -51,7 +51,7 @@ public class SshConnection implements ServerConnection, AutoCloseable {
             log.info("SSH会话连接成功 [{}@{}]", this.serverInfo.getUsername(), this.serverInfo.getHost());
         } catch (JSchException e) {
             ConnectErrorCode errorCode = ConnectErrorCode.classifyFromMessage(e.getMessage());
-            String connectionInfo = String.format("%s@%s:%d", this.serverInfo.getUsername(), this.serverInfo.getHost(), this.serverInfo.getPort());
+            String connectionInfo = String.format("%s@%s:%d", serverInfo.getUsername(), serverInfo.getHost(), serverInfo.getPort());
             log.error("SSH连接失败 [{}] - {}: {}", new Object[]{errorCode.name(), connectionInfo, e.getMessage()});
             throw new ConnectionException(errorCode, this.serverInfo.getServerId(), connectionInfo, e.getMessage());
         }
