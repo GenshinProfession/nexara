@@ -4,6 +4,7 @@ import com.nexara.server.service.ServerUploadService;
 import com.nexara.server.util.AjaxResult;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +23,10 @@ public class ServerUploadController {
      */
     @PostMapping("/init")
     public AjaxResult initUploadSession(
-            @RequestParam @NotBlank @Size(min = 32, max = 32) String fileHash,
-            @RequestParam @NotBlank String fileName,
-            @RequestParam @NotBlank @Min(1L) Integer totalChunks,
-            @RequestParam @NotBlank @Min(1024L) Long chunkSize) {
+            @RequestParam("fileHash") @NotBlank @Size(min = 32, max = 32) String fileHash,
+            @RequestParam("fileName") @NotBlank String fileName,
+            @RequestParam("totalChunks") @NotNull @Min(1L) Integer totalChunks,
+            @RequestParam("chunkSize")   @NotNull @Min(1024) Long chunkSize) {
         return serverUploadService.initUploadSession(fileHash, fileName, totalChunks, chunkSize);
     }
 
@@ -33,7 +34,7 @@ public class ServerUploadController {
      * 本地上传-轮询状态
      */
     @GetMapping("/status")
-    public AjaxResult fetchUploadStatus(@RequestParam String fileHash) {
+    public AjaxResult fetchUploadStatus(@RequestParam("fileHash") String fileHash) {
         return serverUploadService.fetchUploadStatus(fileHash);
     }
 
@@ -42,8 +43,8 @@ public class ServerUploadController {
      */
     @PostMapping("/chunk-batch")
     public AjaxResult uploadChunkBatch(
-            @RequestParam String fileHash,
-            @RequestPart List<MultipartFile> chunks) {
+            @RequestPart("fileHash") String fileHash,
+            @RequestPart("chunks") List<MultipartFile> chunks) {
         return serverUploadService.uploadChunkBatch(fileHash, chunks);
     }
 
