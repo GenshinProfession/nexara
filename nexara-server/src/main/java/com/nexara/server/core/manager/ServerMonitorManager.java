@@ -1,5 +1,6 @@
 package com.nexara.server.core.manager;
 
+import com.nexara.server.polo.enums.ServerStatusEnum;
 import com.nexara.server.polo.model.ServerStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -43,8 +44,8 @@ public class ServerMonitorManager {
             double memoryUsagePercent = getValidatedMemoryUsage(metricsData);
             double diskTotalGB = getTotalDiskSizeGB(metricsData);
             double diskUsagePercent = getTotalDiskUsage(metricsData);
-            String networkStatus = getValidatedNetworkStatus(metricsData);
-            String loadStatus = calculateLoadStatus(memoryUsagePercent, diskUsagePercent);
+            ServerStatusEnum networkStatus = getValidatedNetworkStatus(metricsData);
+            ServerStatusEnum loadStatus = calculateLoadStatus(memoryUsagePercent, diskUsagePercent);
 
             // 设置ServerStatus对象
             serverStatus.setCpuCores(cpuCores);
@@ -52,7 +53,7 @@ public class ServerMonitorManager {
             serverStatus.setMemoryUsagePercent((float) memoryUsagePercent);
             serverStatus.setDiskSizeGb((float) diskTotalGB);
             serverStatus.setDiskUsagePercent((float) diskUsagePercent);
-            serverStatus.setNetworkStatus(convertNetworkStatus(networkStatus));
+            serverStatus.setNetworkStatus(networkStatus);
             serverStatus.setLoadStatus(loadStatus);
             serverStatus.setLastUpdated(new Date());
 
@@ -64,31 +65,19 @@ public class ServerMonitorManager {
         return serverStatus;
     }
 
-    /**
-     * 转换网络状态为数据库存储格式
-     */
-    private String convertNetworkStatus(String status) {
-        if ("正常".equals(status)) {
-            return "online";
-        } else if ("异常".equals(status)) {
-            return "offline";
-        } else {
-            return "unstable";
-        }
-    }
 
     /**
      * 计算负载状态
      */
-    private String calculateLoadStatus(double memoryUsagePercent, double diskUsagePercent) {
+    private ServerStatusEnum calculateLoadStatus(double memoryUsagePercent, double diskUsagePercent) {
         if (memoryUsagePercent > 90 || diskUsagePercent > 90) {
-            return "critical";
+            return ServerStatusEnum.CRITICAL;
         } else if (memoryUsagePercent > 75 || diskUsagePercent > 75) {
-            return "high";
+            return ServerStatusEnum.HIGH;
         } else if (memoryUsagePercent > 50 || diskUsagePercent > 50) {
-            return "medium";
+            return ServerStatusEnum.MEDIUM;
         } else {
-            return "low";
+            return ServerStatusEnum.LOW;
         }
     }
 
@@ -184,17 +173,17 @@ public class ServerMonitorManager {
         }
     }
 
-    private String getValidatedNetworkStatus(String metrics) {
+    private ServerStatusEnum getValidatedNetworkStatus(String metrics) {
         try {
             Pattern pattern = Pattern.compile("node_network_up\\{device=\"(eth\\d+|ens\\d+|enp\\d+)\"}\\s+1");
             Matcher matcher = pattern.matcher(metrics);
 
             if (matcher.find()) {
-                return "正常";
+                return ServerStatusEnum.ONLINE;
             }
-            return "异常";
+            return ServerStatusEnum.OFFLINE;
         } catch (Exception e) {
-            return "异常";
+            return ServerStatusEnum.ERROR;
         }
     }
 

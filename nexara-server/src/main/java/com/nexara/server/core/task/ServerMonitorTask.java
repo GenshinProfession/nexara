@@ -2,6 +2,7 @@ package com.nexara.server.core.task;
 
 import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.mapper.ServerStatusMapper;
+import com.nexara.server.polo.enums.ServerStatusEnum;
 import com.nexara.server.polo.model.ServerInfo;
 import com.nexara.server.polo.model.ServerStatus;
 import com.nexara.server.util.RedisUtils;
@@ -37,7 +38,7 @@ public class ServerMonitorTask {
      * 常规监控 - 每30钟执行一次
      */
     @SneakyThrows
-    @Scheduled(cron = "0 */30 * * * ?")
+    @Scheduled(fixedDelay = 10_000)
     public void regularMonitor() {
         log.info("开始常规服务器监控任务");
         monitorServers();
@@ -111,6 +112,7 @@ public class ServerMonitorTask {
             // 设置服务器ID
             serverMetrics.setServerId(serverId);
 
+            System.out.println(serverMetrics);
             // 存储到数据库
             saveToDatabase(serverMetrics);
 
@@ -136,8 +138,8 @@ public class ServerMonitorTask {
         try {
             ServerStatus errorStatus = new ServerStatus();
             errorStatus.setServerId(serverInfo.getServerId());
-            errorStatus.setNetworkStatus("offline");
-            errorStatus.setLoadStatus("critical");
+            errorStatus.setNetworkStatus(ServerStatusEnum.OFFLINE);
+            errorStatus.setLoadStatus(ServerStatusEnum.ERROR);
             errorStatus.setLastUpdated(new java.util.Date());
 
             // 保存错误状态到数据库
