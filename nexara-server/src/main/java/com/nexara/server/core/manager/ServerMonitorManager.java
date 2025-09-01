@@ -1,6 +1,7 @@
 package com.nexara.server.core.manager;
 
-import com.nexara.server.polo.enums.ServerStatusEnum;
+import com.nexara.server.polo.enums.LoadStatus;
+import com.nexara.server.polo.enums.NetworkStatus;
 import com.nexara.server.polo.model.ServerStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -44,8 +45,8 @@ public class ServerMonitorManager {
             double memoryUsagePercent = getValidatedMemoryUsage(metricsData);
             double diskTotalGB = getTotalDiskSizeGB(metricsData);
             double diskUsagePercent = getTotalDiskUsage(metricsData);
-            ServerStatusEnum networkStatus = getValidatedNetworkStatus(metricsData);
-            ServerStatusEnum loadStatus = calculateLoadStatus(memoryUsagePercent, diskUsagePercent);
+            NetworkStatus networkStatus = getValidatedNetworkStatus(metricsData);
+            LoadStatus loadStatus = calculateLoadStatus(memoryUsagePercent, diskUsagePercent);
 
             // 设置ServerStatus对象
             serverStatus.setCpuCores(cpuCores);
@@ -67,17 +68,20 @@ public class ServerMonitorManager {
 
 
     /**
-     * 计算负载状态
+     * 计算负载状态（加权平均）
      */
-    private ServerStatusEnum calculateLoadStatus(double memoryUsagePercent, double diskUsagePercent) {
-        if (memoryUsagePercent > 90 || diskUsagePercent > 90) {
-            return ServerStatusEnum.CRITICAL;
-        } else if (memoryUsagePercent > 75 || diskUsagePercent > 75) {
-            return ServerStatusEnum.HIGH;
-        } else if (memoryUsagePercent > 50 || diskUsagePercent > 50) {
-            return ServerStatusEnum.MEDIUM;
+    private LoadStatus calculateLoadStatus(double memoryUsagePercent, double diskUsagePercent) {
+        // 内存和磁盘各占 50% 权重（也可以按实际情况调整，比如内存 70%，磁盘 30%）
+        double loadScore = (memoryUsagePercent * 0.5) + (diskUsagePercent * 0.5);
+
+        if (loadScore > 90) {
+            return LoadStatus.CRITICAL;
+        } else if (loadScore > 75) {
+            return LoadStatus.HIGH;
+        } else if (loadScore > 50) {
+            return LoadStatus.MEDIUM;
         } else {
-            return ServerStatusEnum.LOW;
+            return LoadStatus.LOW;
         }
     }
 
@@ -133,7 +137,7 @@ public class ServerMonitorManager {
 
                 double size = Double.parseDouble(fsMatcher.group(2));
                 if (size > 0) {
-                    double avail = extractFilesystemValue(metrics, "node_filesystem_avail_bytes", mountPoint);
+                    double avail = extractFilesystemValue(metrics, mountPoint);
                     totalSize += size;
                     totalUsed += (size - avail);
                 }
@@ -173,17 +177,17 @@ public class ServerMonitorManager {
         }
     }
 
-    private ServerStatusEnum getValidatedNetworkStatus(String metrics) {
+    private NetworkStatus getValidatedNetworkStatus(String metrics) {
         try {
             Pattern pattern = Pattern.compile("node_network_up\\{device=\"(eth\\d+|ens\\d+|enp\\d+)\"}\\s+1");
             Matcher matcher = pattern.matcher(metrics);
 
             if (matcher.find()) {
-                return ServerStatusEnum.ONLINE;
+                return NetworkStatus.ONLINE;
             }
-            return ServerStatusEnum.OFFLINE;
+            return NetworkStatus.OFFLINE;
         } catch (Exception e) {
-            return ServerStatusEnum.ERROR;
+            return NetworkStatus.UNSTABLE;
         }
     }
 
@@ -196,8 +200,8 @@ public class ServerMonitorManager {
         throw new IllegalArgumentException("未找到指标: " + metricName);
     }
 
-    private double extractFilesystemValue(String metrics, String metricName, String mountpoint) {
-        Pattern pattern = Pattern.compile(metricName + "\\{[^}]*mountpoint=\"" + Pattern.quote(mountpoint) + "\"[^}]*}\\s+([0-9.e+]+)");
+    private double extractFilesystemValue(String metrics, String mountpoint) {
+        Pattern pattern = Pattern.compile("node_filesystem_avail_bytes" + "\\{[^}]*mountpoint=\"" + Pattern.quote(mountpoint) + "\"[^}]*}\\s+([0-9.e+]+)");
         Matcher matcher = pattern.matcher(metrics);
         if (matcher.find()) {
             return Double.parseDouble(matcher.group(1));

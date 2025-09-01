@@ -29,9 +29,4 @@ public class ServerUploadService {
         uploadTaskManager.batchUpload(fileHash, chunks);
         return AjaxResult.success();
     }
-
-    public AjaxResult uploadRemoteFile(String serverId, String filePath) {
-        uploadTaskManager.uploadRemoteFile(serverId,filePath);
-        return AjaxResult.success("上传成功！");
-    }
 }

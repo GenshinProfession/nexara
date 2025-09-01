@@ -3,21 +3,15 @@ package com.nexara.server.polo.enums;
 import lombok.Getter;
 
 @Getter
-public enum ServerStatusEnum {
+public enum NetworkStatus {
 
-
-    NORMAL("normal"),
     ONLINE("online"),
     OFFLINE("offline"),
-    LOW("low"),
-    MEDIUM("medium"),
-    HIGH("high"),
-    CRITICAL("critical"),
-    ERROR("error");
+    UNSTABLE("unstable");
 
     private final String description;
 
-    ServerStatusEnum(String description) {
+    NetworkStatus(String description) {
         this.description = description;
     }
     @Override

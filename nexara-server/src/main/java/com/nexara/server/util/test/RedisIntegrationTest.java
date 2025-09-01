@@ -12,6 +12,7 @@ import com.nexara.server.polo.model.ServerStatus;
 import com.nexara.server.core.manager.InitEnvTaskManager;
 import com.nexara.server.core.manager.PortCheckTaskManager;
 import com.nexara.server.core.manager.ServerMonitorManager;
+import com.nexara.server.util.RedisUtils;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,9 @@ public class RedisIntegrationTest {
 
     @Autowired
     private DockerfileFactory dockerfileFactory;
+
+    @Autowired
+    private RedisUtils redisUtils;
 
     @Test
     public void testBean(){
@@ -97,6 +101,33 @@ public class RedisIntegrationTest {
 
         Thread.sleep(100000);
         System.out.println(initEnvTaskManager.getProgress(taskId));
+    }
+
+    private static final String REDIS_SERVER_STATUS_PREFIX = "server:";
+
+    @Test
+    public void TestRedis(){
+        Set<String> strings = redisUtils.scanKeysByPrefix(REDIS_SERVER_STATUS_PREFIX);
+
+        System.out.println(strings);
+    }
+
+    /**
+     * 查看 Redis 中所有的键
+     */
+    @Test
+    public void showAllRedisKeys() {
+        System.out.println("=== Redis 中的所有键 ===");
+
+        try {
+            // 方法1: 使用 RedisUtils 扫描所有键（空前缀）
+            Set<String> allKeys = redisUtils.scanKeysByPrefix("port_check:");
+            System.out.println(allKeys);
+
+        } catch (Exception e) {
+            System.err.println("获取 Redis 键时发生错误: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
 }

@@ -1,11 +1,18 @@
 package com.nexara.server.util;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -15,6 +22,7 @@ import java.util.concurrent.TimeUnit;
  * 方便在业务代码中直接调用，而不必每次都写冗长的 redisTemplate 语句。
  */
 @Component
+@Log4j2
 @RequiredArgsConstructor
 public class RedisUtils {
 
@@ -96,4 +104,41 @@ public class RedisUtils {
     public List<Object> lRange(String key, long start, long end) {
         return redisTemplate.opsForList().range(key, start, end);
     }
+
+    /**
+     * 扫描匹配指定模式的键
+     * @param pattern 键模式，如 "user:*:profile"
+     * @param batchSize 每次扫描的批次大小
+     * @return 匹配的键集合
+     */
+    public Set<String> scanKeys(String pattern, int batchSize) {
+        Set<String> keys = new HashSet<>();
+        ScanOptions scanOptions = ScanOptions.scanOptions()
+                .match(pattern)
+                .count(batchSize)
+                .build();
+
+        try (Cursor<String> cursor = redisTemplate.scan(scanOptions)) {
+            while (cursor.hasNext()) {
+                keys.add(new String(cursor.next().getBytes(), StandardCharsets.UTF_8));
+            }
+        }
+
+        return keys;
+    }
+
+    /**
+     * 扫描指定前缀的键
+     */
+    public Set<String> scanKeysByPrefix(String prefix, int batchSize) {
+        return scanKeys(prefix + "*", batchSize);
+    }
+
+    /**
+     * 扫描指定前缀的键（使用默认批次大小）
+     */
+    public Set<String> scanKeysByPrefix(String prefix) {
+        return scanKeysByPrefix(prefix, 1000);
+    }
+
 }

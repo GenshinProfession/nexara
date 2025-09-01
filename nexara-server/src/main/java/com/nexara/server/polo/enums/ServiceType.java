@@ -32,7 +32,7 @@ public enum ServiceType {
 
     private ServiceType(String displayName, List<Integer> ports) {
         this.displayName = displayName;
-        this.ports = new ArrayList(ports);
+        this.ports = new ArrayList<>(ports);
         this.isRange = false;
     }
 
@@ -47,11 +47,11 @@ public enum ServiceType {
     }
 
     public int getDefaultPort() {
-        return (Integer)this.ports.get(0);
+        return (Integer)this.ports.getFirst();
     }
 
     public int getRangeStart() {
-        return (Integer)this.ports.get(0);
+        return (Integer)this.ports.getFirst();
     }
 
     public int getRangeEnd() {

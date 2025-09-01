@@ -23,10 +23,10 @@ spring:
   servlet:
     multipart:
       max-file-size: 20MB      # 单个文件
-      max-request-size: 50MB   # 整个 multipart 请求
+      max-request-size: 100MB   # 整个 multipart 请求
 
 server:
-  port: 8081
+  port: 8080
 
 mybatis:
   configuration:

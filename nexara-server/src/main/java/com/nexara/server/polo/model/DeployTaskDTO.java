@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -21,6 +22,9 @@ public class DeployTaskDTO {
 
     // 项目简介
     private String projectDescription;
+
+    // 部署时间
+    private LocalDateTime deployTime;
 
     private List<BackendDeployInfo> backends;
     private List<FrontendDeployInfo> frontends;

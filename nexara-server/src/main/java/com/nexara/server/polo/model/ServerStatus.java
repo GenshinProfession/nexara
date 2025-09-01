@@ -1,11 +1,10 @@
 package com.nexara.server.polo.model;
 
-
-
 import java.io.Serializable;
 import java.util.Date;
 
-import com.nexara.server.polo.enums.ServerStatusEnum;
+import com.nexara.server.polo.enums.LoadStatus;
+import com.nexara.server.polo.enums.NetworkStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -18,6 +17,11 @@ import org.hibernate.validator.constraints.Length;
 */
 @Data
 public class ServerStatus implements Serializable {
+
+    /**
+     * 主键id
+     */
+    private Long id;
 
     /**
     * 
@@ -56,14 +60,14 @@ public class ServerStatus implements Serializable {
     @NotBlank(message="[]不能为空")
     @Size(max= -1,message="编码长度不能超过-1")
     @Length(max= -1,message="编码长度不能超过-1")
-    private ServerStatusEnum networkStatus;
+    private NetworkStatus networkStatus;
     /**
     * 
     */
     @NotBlank(message="[]不能为空")
     @Size(max= -1,message="编码长度不能超过-1")
     @Length(max= -1,message="编码长度不能超过-1")
-    private ServerStatusEnum loadStatus;
+    private LoadStatus loadStatus;
     /**
     * 
     */

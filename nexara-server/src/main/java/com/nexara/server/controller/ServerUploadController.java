@@ -1,10 +1,9 @@
 package com.nexara.server.controller;
 
+import com.nexara.server.polo.model.UploadInitDTO;
 import com.nexara.server.service.ServerUploadService;
 import com.nexara.server.util.AjaxResult;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +21,12 @@ public class ServerUploadController {
      * 本地上传-初始化
      */
     @PostMapping("/init")
-    public AjaxResult initUploadSession(
-            @RequestParam("fileHash") @NotBlank @Size(min = 32, max = 32) String fileHash,
-            @RequestParam("fileName") @NotBlank String fileName,
-            @RequestParam("totalChunks") @NotNull @Min(1L) Integer totalChunks,
-            @RequestParam("chunkSize")   @NotNull @Min(1024) Long chunkSize) {
-        return serverUploadService.initUploadSession(fileHash, fileName, totalChunks, chunkSize);
+    public AjaxResult initUploadSession(@RequestBody @Valid UploadInitDTO dto) {
+        return serverUploadService.initUploadSession(
+                dto.getFileHash(),
+                dto.getFileName(),
+                dto.getTotalChunks(),
+                dto.getChunkSize());
     }
 
     /**
@@ -43,19 +42,9 @@ public class ServerUploadController {
      */
     @PostMapping("/chunk-batch")
     public AjaxResult uploadChunkBatch(
-            @RequestPart("fileHash") String fileHash,
-            @RequestPart("chunks") List<MultipartFile> chunks) {
+            @RequestParam("fileHash") @Size(min = 64, max = 64) String fileHash,
+            @RequestParam("chunks") List<MultipartFile> chunks) {
         return serverUploadService.uploadChunkBatch(fileHash, chunks);
-    }
-
-    /**
-     * 远程上传
-     */
-    @PostMapping("/remote")
-    public AjaxResult uploadRemoteFile(
-            @RequestParam("serverId") String serverId,
-            @RequestParam("filePath") String filePath){
-        return serverUploadService.uploadRemoteFile(serverId,filePath);
     }
 
 }

@@ -2,13 +2,13 @@ package com.nexara.server.core.task;
 
 import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.mapper.ServerStatusMapper;
-import com.nexara.server.polo.enums.ServerStatusEnum;
+import com.nexara.server.polo.enums.LoadStatus;
+import com.nexara.server.polo.enums.NetworkStatus;
 import com.nexara.server.polo.model.ServerInfo;
 import com.nexara.server.polo.model.ServerStatus;
 import com.nexara.server.util.RedisUtils;
 import com.nexara.server.core.manager.ServerMonitorManager;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,15 +16,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+
+import static com.nexara.server.util.Constants.REDIS_SERVER_STATUS_PREFIX;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ServerMonitorTask {
-
-    private static final String REDIS_SERVER_STATUS_PREFIX = "server:status:";
-    private static final long REDIS_TTL_MINUTES = 10; // Redis缓存10分钟
 
     private final ServerInfoMapper serverInfoMapper;
     private final ServerStatusMapper serverStatusMapper;
@@ -35,12 +33,11 @@ public class ServerMonitorTask {
 
 
     /**
-     * 常规监控 - 每30钟执行一次
+     * 服务器监控 - 每半小时整点执行一次（如 19:00, 19:30）
      */
-    @SneakyThrows
-    @Scheduled(fixedDelay = 10_000)
+    @Scheduled(cron = "0 0,30 * * * ?")
     public void regularMonitor() {
-        log.info("开始常规服务器监控任务");
+        log.info("开启服务器监控任务");
         monitorServers();
     }
 
@@ -60,7 +57,7 @@ public class ServerMonitorTask {
 
         // 异步并行监控所有服务器
         List<CompletableFuture<Void>> futures = allServerInfo.stream()
-                .map(serverInfo -> monitorServerAsync(serverInfo))
+                .map(this::monitorServerAsync)
                 .toList();
 
         // 等待所有监控任务完成
@@ -105,7 +102,7 @@ public class ServerMonitorTask {
             if (serverMetrics.getError() != null) {
                 log.warn("服务器 {} 监控失败: {}", host, serverMetrics.getError());
                 // 即使失败也记录到数据库，标记错误状态
-                handleFailedMonitor(serverInfo, serverMetrics);
+                handleFailedMonitor(serverInfo);
                 return;
             }
 
@@ -134,12 +131,12 @@ public class ServerMonitorTask {
     /**
      * 处理监控失败的情况
      */
-    private void handleFailedMonitor(ServerInfo serverInfo, ServerStatus serverMetrics) {
+    private void handleFailedMonitor(ServerInfo serverInfo) {
         try {
             ServerStatus errorStatus = new ServerStatus();
             errorStatus.setServerId(serverInfo.getServerId());
-            errorStatus.setNetworkStatus(ServerStatusEnum.OFFLINE);
-            errorStatus.setLoadStatus(ServerStatusEnum.ERROR);
+            errorStatus.setNetworkStatus(NetworkStatus.UNSTABLE);
+            errorStatus.setLoadStatus(LoadStatus.ERROR);
             errorStatus.setLastUpdated(new java.util.Date());
 
             // 保存错误状态到数据库
@@ -147,7 +144,7 @@ public class ServerMonitorTask {
 
             // 更新Redis缓存
             String key = REDIS_SERVER_STATUS_PREFIX + serverInfo.getServerId();
-            redisUtils.set(key, errorStatus, REDIS_TTL_MINUTES, TimeUnit.MINUTES);
+            redisUtils.set(key, errorStatus);
 
         } catch (Exception e) {
             log.error("保存服务器 {} 错误状态失败", serverInfo.getHost(), e);
@@ -170,7 +167,7 @@ public class ServerMonitorTask {
      */
     private void updateRedisCache(String key, ServerStatus serverMetrics) {
         try {
-            redisUtils.set(key, serverMetrics, REDIS_TTL_MINUTES, TimeUnit.MINUTES);
+            redisUtils.set(key, serverMetrics);
         } catch (Exception e) {
             log.error("更新服务器监控数据到Redis失败, key: {}", key, e);
         }
