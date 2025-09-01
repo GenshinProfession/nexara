@@ -1,0 +1,5 @@
+# 检查 Nginx 是否已安装
+command -v nginx &> /dev/null
+
+# 显示已安装版本
+nginx -v 2>&1

@@ -1,0 +1,11 @@
+# 更新软件包列表
+sudo apt-get update
+
+# 安装Nginx
+sudo apt-get install -y nginx
+
+# 启动Nginx服务
+sudo systemctl start nginx
+
+# 设置 Nginx 开机自启
+sudo systemctl enable nginx

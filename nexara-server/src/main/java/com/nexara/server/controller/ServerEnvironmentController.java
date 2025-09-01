@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/server/environment")
 @RequiredArgsConstructor
 public class ServerEnvironmentController {
+
     private final ServerEnvironmentService serverEnvironmentService;
 
     @PostMapping("/init")

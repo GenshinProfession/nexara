@@ -1,8 +1,11 @@
 package com.nexara.server.util.test;
 
 import com.nexara.server.ServerApplication;
+import com.nexara.server.core.connect.ConnectionFactory;
+import com.nexara.server.core.connect.product.ServerConnection;
 import com.nexara.server.core.dockerfile.DockerfileFactory;
 import com.nexara.server.core.dockerfile.DockerfileGenerator;
+import com.nexara.server.core.os.OSFactory;
 import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.mapper.ServerStatusMapper;
 import com.nexara.server.polo.enums.CodeLanguage;
@@ -44,6 +47,12 @@ public class RedisIntegrationTest {
 
     @Autowired
     private ServerStatusMapper serverStatusMapper;
+
+    @Autowired
+    private OSFactory osFactory;
+
+    @Autowired
+    private ConnectionFactory connectionFactory;
 
     @Autowired
     private DockerfileFactory dockerfileFactory;
@@ -94,8 +103,7 @@ public class RedisIntegrationTest {
         String serverId = myApp.getServerId();
 
         List<ServiceType> serviceTypes = new ArrayList<>();
-        serviceTypes.add(ServiceType.DOCKER);
-        serviceTypes.add(ServiceType.PROMETHEUS);
+        serviceTypes.add(ServiceType.NGINX);
 
         String taskId = initEnvTaskManager.submitInitTask(serverId, serviceTypes);
 
@@ -128,6 +136,43 @@ public class RedisIntegrationTest {
             System.err.println("获取 Redis 键时发生错误: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void DeployFront(){
+        ServerInfo myApp = serverInfoMapper.findByServerId("my_app");
+        ServerConnection connection = connectionFactory.createConnection(myApp);
+
+        // 函数:判断当前前端包是否符合规范, index.html（路径要记忆）、css、js、img（ai帮你写）
+        String indexPath = "/dist/index.html";
+
+        // 远程路径 /root/nexara
+        String remotePath = "/root/nexara";
+
+        // 上传文件到远程路径
+        connection.uploadFile("","");
+
+        // 添加文件访问权限
+        connection.executeCommand("chmod -R 777 /root/nexara");
+
+        // 那么最终前端文件的路径在
+        String finalPath = "/root/nexara/dist/index.html";
+
+        // 解压包（执行命令）
+        connection.executeCommand("tar -zxvf /root/nexara/dist.tar.gz -C /root/nexara");
+
+        // 解压以后删除原来的压缩包
+
+        // 填写front.conf，生成一份，上传到云服务器
+        // copy这一份到/etc/nginx/sites-available/
+        // 做软链接 告诉Nginx要通过这个文件,去执行这份conf
+
+        // 原来服务器上面可能存在旧的conf,可能需要你进行合并操作（先忽略)
+
+        // 重启Nginx
+        connection.executeCommand("nginx -s reload");
+
+        // 测试一下访问,web上试一下,如果访问不到
     }
 
 }
