@@ -1,6 +1,8 @@
 package com.nexara.server.service;
 
+import com.nexara.server.core.manager.DeployProjectManager;
 import com.nexara.server.polo.enums.CodeLanguage;
+import com.nexara.server.polo.model.DeployTaskDTO;
 import com.nexara.server.util.AjaxResult;
 import com.nexara.server.core.manager.PackageManager;
 import com.nexara.server.core.manager.PortCheckTaskManager;
@@ -18,6 +20,7 @@ public class ServerDeployService {
 
     private final PortCheckTaskManager portCheckTaskManager;
     private final PackageManager packageManager;
+    private final DeployProjectManager deployProjectManager;
 
     public AjaxResult checkPort(String serverId, int port) {
         if(portCheckTaskManager.checkSinglePort(serverId,port)){
@@ -50,4 +53,14 @@ public class ServerDeployService {
         }
     }
 
+    public AjaxResult deployProject(DeployTaskDTO deployTaskDTO) {
+        // 根据远程路径把所有文件调配到一个对应的文件夹中
+
+        // 后端: 生成DockerCompose文件
+
+        // 前端: 配置Nginx文件
+
+        // 数据库：传入sql文件并且执行
+        return AjaxResult.success();
+    }
 }

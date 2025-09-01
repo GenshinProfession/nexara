@@ -8,7 +8,7 @@ public interface DockerfileGenerator {
 
     /**
      *
-     * @param projectPath 本地文件路径
+     * @param projectPath 远程文件路径
      * @param port 端口
      * @param projectName 项目名称
      * @return
