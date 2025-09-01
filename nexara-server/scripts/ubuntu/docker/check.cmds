@@ -1,5 +1,11 @@
 # 检查 Docker 是否已安装
 command -v docker &> /dev/null
 
-# 显示已安装版本
+# 显示 Docker 已安装版本
 docker --version
+
+# 检查 Docker Compose 是否已安装
+command -v docker-compose &> /dev/null || command -v docker compose &> /dev/null
+
+# 显示 Docker Compose 已安装版本
+docker-compose version || docker compose version

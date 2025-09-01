@@ -30,6 +30,9 @@ public class ServerMonitorTask {
     private final ServerMonitorManager serverMonitorManager;
     private final RedisUtils redisUtils;
 
+    // redis 存储的是最新的服务器信息（无限时间） sqlite 存储的是每次监控的时候的服务器信息 -> 提供服务器状态的可视化页面
+
+
     /**
      * 常规监控 - 每30钟执行一次
      */
@@ -114,8 +117,12 @@ public class ServerMonitorTask {
             // 更新Redis缓存
             updateRedisCache(key, serverMetrics);
 
-            log.info("服务器 {} 监控完成 - CPU: {}核, 内存: {}%",
-                    host, serverMetrics.getCpuCores(), serverMetrics.getMemoryUsagePercent());
+            log.info("服务器 {} 监控完成 - CPU: {}核, 内存: {}%, 硬盘: {}% , 网络: {}",
+                    host,
+                    serverMetrics.getCpuCores(),
+                    serverMetrics.getMemoryUsagePercent(),
+                    serverMetrics.getDiskUsagePercent(),
+                    serverMetrics.getNetworkStatus());
 
         } catch (Exception e) {
             log.error("监控服务器 {} 时发生未预期异常", host, e);
@@ -181,4 +188,5 @@ public class ServerMonitorTask {
             log.error("清理监控数据失败", e);
         }
     }
+
 }

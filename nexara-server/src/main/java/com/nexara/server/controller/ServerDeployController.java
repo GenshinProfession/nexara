@@ -1,5 +1,6 @@
 package com.nexara.server.controller;
 
+import com.nexara.server.polo.model.DeployTaskDTO;
 import com.nexara.server.service.ServerDeployService;
 import com.nexara.server.util.AjaxResult;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +28,12 @@ public class ServerDeployController {
     public AjaxResult detectLanguageAndVersion(
             @RequestParam("file") MultipartFile file) {
         return serverDeployService.detectLanguageAndVersion(file);
+    }
+
+    @Operation(summary = "部署项目")
+    @PostMapping("/deploy")
+    public AjaxResult deployProject(@RequestBody DeployTaskDTO deployTaskDTO){
+        return serverDeployService.deployProject(deployTaskDTO);
     }
 
 

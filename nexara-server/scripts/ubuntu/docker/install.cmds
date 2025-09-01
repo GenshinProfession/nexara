@@ -48,5 +48,8 @@ docker --version
 sudo usermod -aG docker $USER
 newgrp docker
 
-# 1.11 管理 Docker 服务（常用命令提示）
+# 1.11 重新启动 Docker
 sudo systemctl restart docker
+
+# 1.12 安装 Docker Compose 插件
+sudo apt-get install -y docker-compose-plugin
