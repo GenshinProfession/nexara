@@ -34,13 +34,10 @@
     </select>
 
     <insert id="insert" parameterType="com.nexara.server.polo.model.ServerStatus">
-        insert into server_status (
-            server_id, cpu_cores, memory_size_gb, memory_usage_percent,
-            disk_size_gb, disk_usage_percent, network_status, load_status, last_updated
-        ) values (
-                     #{serverId}, #{cpuCores}, #{memorySizeGb}, #{memoryUsagePercent},
-                     #{diskSizeGb}, #{diskUsagePercent}, #{networkStatus}, #{loadStatus}, #{lastUpdated}
-                 )
+        insert into server_status (server_id, cpu_cores, memory_size_gb, memory_usage_percent,
+                                   disk_size_gb, disk_usage_percent, network_status, load_status, last_updated)
+        values (#{serverId}, #{cpuCores}, #{memorySizeGb}, #{memoryUsagePercent},
+                #{diskSizeGb}, #{diskUsagePercent}, #{networkStatus}, #{loadStatus}, #{lastUpdated})
     </insert>
 
     <update id="update" parameterType="com.nexara.server.polo.model.ServerStatus">

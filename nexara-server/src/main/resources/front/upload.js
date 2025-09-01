@@ -6,18 +6,11 @@ const $   = sel => document.querySelector(sel);
 const log = msg => $("#log").textContent += msg + "\n";
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-/* ========== 主状态 ========== */
 let task = {
-    file: null,
-    hash: "",
-    chunkSize: 0,
-    totalChunks: 0,
-    uploaded: 0,
-    paused: false,
-    controller: null
+    file: null, hash: "", chunkSize: 0, totalChunks: 0, uploaded: 0, paused: false
 };
 
-/* ========== 计算文件 MD5 ========== */
+/* ========== 计算 MD5 ========== */
 async function calculateHash(file) {
     return new Promise((resolve, reject) => {
         const spark = new SparkMD5.ArrayBuffer();
@@ -28,7 +21,7 @@ async function calculateHash(file) {
     });
 }
 
-/* ========== 网络请求封装 ========== */
+/* ========== 网络封装 ========== */
 async function request(url, method = "GET", body = null) {
     const opts = { method };
     if (body) opts.body = body;
@@ -40,14 +33,12 @@ async function request(url, method = "GET", body = null) {
 /* ========== 初始化任务 ========== */
 async function initTask() {
     const { file, chunkSize } = task;
-    task.hash         = await calculateHash(file);
-    task.totalChunks  = Math.ceil(file.size / chunkSize);
+    task.hash        = await calculateHash(file);
+    task.totalChunks = Math.ceil(file.size / chunkSize);
 
     const params = new URLSearchParams({
-        fileHash: task.hash,
-        fileName: file.name,
-        totalChunks: task.totalChunks,
-        chunkSize: chunkSize / 1024
+        fileHash: task.hash, fileName: file.name,
+        totalChunks: task.totalChunks, chunkSize: chunkSize / 1024
     });
     await request(`${BASE_URL}/init?${params}`, "POST");
     log(`文件大小：${Math.round(file.size / 1024)} KB`);
@@ -74,61 +65,64 @@ function renderProgress() {
     $("#percent").textContent = percent;
     $("#barInner").style.width = percent + "%";
 }
+/* ========== 滑动窗口上传（单片失败立即终止并打印） ========== */
+const CHUNK_PER_BATCH = 4;
 
-/* ========== 滑动窗口上传 ========== */
-const CHUNK_PER_BATCH = 4;   // 每批一次发几片
 async function uploadWindow(startIdx, batchSize) {
     if (task.paused) return;
 
-    const form = new FormData();
-    const slices = [];
-    for (let i = 0; i < batchSize; i++) {
-        const idx = startIdx + i;
+    for (let offset = 0; offset < batchSize; offset++) {
+        const idx = startIdx + offset;
         if (idx >= task.totalChunks) break;
-        const start = idx * task.chunkSize;
-        const end   = Math.min(task.file.size, start + task.chunkSize);
-        const blob  = task.file.slice(start, end);
-        form.append("fileHash", task.hash);
-        form.append("chunks", blob, `${task.file.name}_${idx}`);
-        slices.push(idx);
-    }
-    if (!slices.length) return;
 
-    let retries = 0;
-    while (retries < 3) {
-        try {
-            await request(`${BASE_URL}/chunk-batch`, "POST", form);
-            task.uploaded += slices.length;
-            renderProgress();
-            return;
-        } catch (e) {
-            retries++;
-            log(`批次 ${startIdx} 失败，重试 ${retries}/3：${e.message}`);
-            await sleep(Math.pow(2, retries) * 1000);
+        let retries = 0;
+        while (retries < 3) {
+            try {
+                const start = idx * task.chunkSize;
+                const end   = Math.min(task.file.size, start + task.chunkSize);
+                const blob  = task.file.slice(start, end);
+
+                const form = new FormData();
+                form.append("fileHash", task.hash);
+                form.append("chunks", blob, `${task.file.name}_${idx}`);
+
+                await request(`${BASE_URL}/chunk-batch`, "POST", form);
+                task.uploaded++;
+                renderProgress();
+                break;                 // 单片成功
+            } catch (e) {
+                retries++;
+                log(`[批 ${Math.floor(startIdx / CHUNK_PER_BATCH)}] 片 ${idx} 第 ${retries}/3 次失败：${e.message}`);
+                await sleep(Math.pow(2, retries) * 1000);
+            }
+        }
+        if (retries === 3) {
+            // 单片重试耗尽，立即终止并打印
+            log(`[批 ${Math.floor(startIdx / CHUNK_PER_BATCH)}] 片 ${idx} 最终失败，上传终止`);
+            throw new Error(`[批 ${Math.floor(startIdx / CHUNK_PER_BATCH)}] 片 ${idx} 上传失败`);
         }
     }
-    throw new Error(`批次 ${startIdx} 最终失败`);
 }
 
-/* ========== 主循环：顺序窗口 ========== */
+/* ========== 主循环：单片失败即整体失败 ========== */
 async function startUpload() {
     $("#progressBox").style.display = "block";
     await fetchStatus();   // 断点续传
-    task.controller = new AbortController();
+    task.paused = false;
 
-    for (let idx = task.uploaded; idx < task.totalChunks; ) {
-        if (task.paused) break;
-        const batchSize = Math.min(CHUNK_PER_BATCH, task.totalChunks - idx);
-        try {
+    try {
+        for (let idx = task.uploaded; idx < task.totalChunks; ) {
+            if (task.paused) break;
+            const batchSize = Math.min(CHUNK_PER_BATCH, task.totalChunks - idx);
             await uploadWindow(idx, batchSize);
             idx += batchSize;
-        } catch (e) {
-            log(e.message);
-            break;
         }
-    }
-    if (!task.paused && task.uploaded === task.totalChunks) {
-        log("全部完成！");
+        if (!task.paused && task.uploaded === task.totalChunks) {
+            log("全部分片上传完成！");
+        }
+    } catch (e) {
+        // 把异常真正抛到消息框
+        log("上传失败：" + e.message);
     }
 }
 
@@ -146,7 +140,7 @@ $("#uploadForm").addEventListener("submit", async e => {
     if (!file) return alert("请选择文件");
     const chunkSize = Number($("#chunkSize").value) * 1024;
 
-    task = { file, chunkSize, paused: false, uploaded: 0, controller: null };
+    task = { file, chunkSize, uploaded: 0 };
     $("#pauseBtn").disabled = false;
     log("开始计算文件 Hash...");
     try {

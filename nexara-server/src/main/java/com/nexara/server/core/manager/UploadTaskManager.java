@@ -39,11 +39,12 @@ public class UploadTaskManager {
     private final RedisUtils redisUtils;
     private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
     private static final String REDIS_KEY_PREFIX = "upload:";
-    private static final String FINAL_DIR = System.getProperty("user.dir") + "/file/";
+    private static final String CHUNK_TEMP_DIR  = System.getProperty("user.dir") + "/file-temp/";
+    private static final String MERGE_FINAL_DIR = System.getProperty("user.dir") + "/project/";
 
     public void initTask(String fileHash, String fileName, Integer totalChunks, Long chunkSize) {
         try {
-            Path chunkDir = Paths.get(FINAL_DIR + fileHash);
+            Path chunkDir = Paths.get(CHUNK_TEMP_DIR, fileHash);
             Files.createDirectories(chunkDir);
 
             UploadTask task = UploadTask.builder()
@@ -112,7 +113,7 @@ public class UploadTaskManager {
 
     private int uploadSingleChunk(String fileHash, MultipartFile chunk) throws IOException {
         int chunkIndex = extractChunkIndex(chunk);
-        Path chunkPath = Paths.get(FINAL_DIR, fileHash, "temp", String.valueOf(chunkIndex));
+        Path chunkPath = Paths.get(CHUNK_TEMP_DIR, fileHash, String.valueOf(chunkIndex));
         Files.createDirectories(chunkPath.getParent());
 
         chunk.transferTo(chunkPath);
@@ -138,8 +139,9 @@ public class UploadTaskManager {
         } else {
             progress.setStatus(UploadStatus.UPLOADING);
         }
-
+        System.out.println("上传进度：" + task.getUploadProgress());
         redisUtils.set(REDIS_KEY_PREFIX + fileHash, task);
+
     }
 
     private void updateFinalChunks(UploadProgress progress) {
@@ -156,8 +158,8 @@ public class UploadTaskManager {
     private void mergeChunks(UploadTask task) {
         try {
             log.info("正在合并");
-            Path finalPath = Paths.get(FINAL_DIR, task.getFileHash(), task.getFileName());
-            Path tempDir = Paths.get(FINAL_DIR, task.getFileHash(), "temp");
+            Path finalPath = Paths.get(MERGE_FINAL_DIR, task.getFileName());
+            Path tempDir = Paths.get(CHUNK_TEMP_DIR, task.getFileHash());
             Files.createDirectories(finalPath.getParent());
 
             try (OutputStream outputStream = Files.newOutputStream(finalPath)) {

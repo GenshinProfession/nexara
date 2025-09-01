@@ -31,30 +31,20 @@ public class ServerMonitorTask {
     private final RedisUtils redisUtils;
 
     /**
-     * 常规监控 - 每5分钟执行一次
+     * 常规监控 - 每30钟执行一次
      */
     @SneakyThrows
-    @Scheduled(cron = "0 */5 * * * ?")
+    @Scheduled(cron = "0 */30 * * * ?")
     public void regularMonitor() {
         log.info("开始常规服务器监控任务");
-        monitorServers(false);
-    }
-
-    /**
-     * 密集监控 - 每1分钟执行一次（用于关键服务器或调试）
-     */
-    @SneakyThrows
-    @Scheduled(cron = "0 */1 * * * ?")
-    public void intensiveMonitor() {
-        log.info("开始密集服务器监控任务");
-        monitorServers(true);
+        monitorServers();
     }
 
     /**
      * 监控服务器核心方法
-     * @param isIntensive 是否为密集监控模式
+     *
      */
-    private void monitorServers(boolean isIntensive) {
+    private void monitorServers() {
         List<ServerInfo> allServerInfo = serverInfoMapper.findAllServerInfo();
 
         if (allServerInfo.isEmpty()) {
@@ -66,7 +56,7 @@ public class ServerMonitorTask {
 
         // 异步并行监控所有服务器
         List<CompletableFuture<Void>> futures = allServerInfo.stream()
-                .map(serverInfo -> monitorServerAsync(serverInfo, isIntensive))
+                .map(serverInfo -> monitorServerAsync(serverInfo))
                 .toList();
 
         // 等待所有监控任务完成
@@ -84,10 +74,10 @@ public class ServerMonitorTask {
      * 异步监控单个服务器
      */
     @Async("taskExecutor")
-    public CompletableFuture<Void> monitorServerAsync(ServerInfo serverInfo, boolean isIntensive) {
+    public CompletableFuture<Void> monitorServerAsync(ServerInfo serverInfo) {
         return CompletableFuture.runAsync(() -> {
             try {
-                monitorSingleServer(serverInfo, isIntensive);
+                monitorSingleServer(serverInfo);
             } catch (Exception e) {
                 log.error("监控服务器 {} 时发生异常", serverInfo.getHost(), e);
             }
@@ -97,7 +87,7 @@ public class ServerMonitorTask {
     /**
      * 监控单个服务器
      */
-    private void monitorSingleServer(ServerInfo serverInfo, boolean isIntensive) {
+    private void monitorSingleServer(ServerInfo serverInfo) {
         String serverId = serverInfo.getServerId();
         String host = serverInfo.getHost();
         String key = REDIS_SERVER_STATUS_PREFIX + serverId;
@@ -160,13 +150,7 @@ public class ServerMonitorTask {
      */
     private void saveToDatabase(ServerStatus serverMetrics) {
         try {
-            // 检查是否已存在记录
-            ServerStatus existing = serverStatusMapper.selectByServerId(serverMetrics.getServerId());
-            if (existing != null) {
-                serverStatusMapper.update(serverMetrics);
-            } else {
-                serverStatusMapper.insert(serverMetrics);
-            }
+            serverStatusMapper.insert(serverMetrics);
         } catch (Exception e) {
             log.error("保存服务器 {} 监控数据到数据库失败", serverMetrics.getServerId(), e);
         }
