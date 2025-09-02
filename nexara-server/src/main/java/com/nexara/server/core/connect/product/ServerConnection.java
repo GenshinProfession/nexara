@@ -28,6 +28,15 @@ public interface ServerConnection extends AutoCloseable {
     void uploadFile(String localPath, String remotePath) throws FileTransferException;
 
     /**
+     * 上传整个目录到远程服务器（包括子目录和文件）
+     *
+     * @param localDir   本地目录路径
+     * @param remoteDir  远程目录路径
+     * @throws FileTransferException 传输失败时抛出
+     */
+    void uploadDirectory(String localDir, String remoteDir) throws FileTransferException;
+
+    /**
      * 断开连接。
      */
     void disconnect();

@@ -3,8 +3,8 @@ package com.nexara.server.util.test;
 import com.nexara.server.ServerApplication;
 import com.nexara.server.core.connect.ConnectionFactory;
 import com.nexara.server.core.connect.product.ServerConnection;
-import com.nexara.server.core.dockerfile.DockerfileFactory;
-import com.nexara.server.core.dockerfile.DockerfileGenerator;
+import com.nexara.server.core.docker.DockerfileFactory;
+import com.nexara.server.core.docker.DockerfileGenerator;
 import com.nexara.server.core.os.OSFactory;
 import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.mapper.ServerStatusMapper;
@@ -55,19 +55,7 @@ public class RedisIntegrationTest {
     private ConnectionFactory connectionFactory;
 
     @Autowired
-    private DockerfileFactory dockerfileFactory;
-
-    @Autowired
     private RedisUtils redisUtils;
-
-    @Test
-    public void testBean(){
-        System.out.println("测试启动的时候注册实例");
-
-        DockerfileGenerator generator = dockerfileFactory.getGenerator(CodeLanguage.JAVA);
-
-        System.out.println(generator.getSupportedLanguage());
-    }
 
     @Test
     public void testMapper(){

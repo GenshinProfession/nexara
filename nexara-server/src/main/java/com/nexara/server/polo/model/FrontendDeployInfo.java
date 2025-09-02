@@ -14,4 +14,5 @@ public class FrontendDeployInfo {
     private String remoteFilePath;
     private int port;
     private String websitePath;
+    private int index;
 }

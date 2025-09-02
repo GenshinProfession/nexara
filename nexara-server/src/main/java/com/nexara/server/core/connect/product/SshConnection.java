@@ -1,20 +1,17 @@
 package com.nexara.server.core.connect.product;
 
-import com.jcraft.jsch.Channel;
-import com.jcraft.jsch.ChannelExec;
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
+import com.jcraft.jsch.*;
 import com.nexara.server.core.exception.connect.CommandExecutionException;
 import com.nexara.server.core.exception.connect.ConnectionException;
 import com.nexara.server.core.exception.connect.FileTransferException;
 import com.nexara.server.polo.enums.ConnectErrorCode;
 import com.nexara.server.polo.model.ServerInfo;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.*;
+
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -22,69 +19,82 @@ public class SshConnection implements ServerConnection, AutoCloseable {
 
     private final JSch jsch = new JSch();
     private Session session;
-    private final ServerInfo serverInfo;
     private boolean isClosed = false;
+
+    @Getter
+    private final ServerInfo serverInfo;
 
     public SshConnection(ServerInfo serverInfo) throws ConnectionException {
         this.serverInfo = serverInfo;
-        this.initializeSession();
-        this.startKeepaliveThread();
+        initializeSession();
+        startKeepaliveThread();
         log.info("SSH连接已建立，服务器: {}", serverInfo.getHost());
     }
 
     private void initializeSession() throws ConnectionException {
         try {
-            this.session = this.jsch.getSession(this.serverInfo.getUsername(), this.serverInfo.getHost(), this.serverInfo.getPort() > 0 ? this.serverInfo.getPort() : 22);
-            if (this.serverInfo.getPrivateKey() != null) {
-                this.jsch.addIdentity(this.serverInfo.getPrivateKey(), this.serverInfo.getPassphrase());
-                log.debug("使用密钥认证，密钥路径: {}", this.serverInfo.getPrivateKey());
+            session = jsch.getSession(
+                    serverInfo.getUsername(),
+                    serverInfo.getHost(),
+                    serverInfo.getPort() > 0 ? serverInfo.getPort() : 22
+            );
+
+            if (serverInfo.getPrivateKey() != null) {
+                jsch.addIdentity(serverInfo.getPrivateKey(), serverInfo.getPassphrase());
+                log.debug("使用密钥认证，密钥路径: {}", serverInfo.getPrivateKey());
             } else {
-                this.session.setPassword(this.serverInfo.getPassword());
+                session.setPassword(serverInfo.getPassword());
                 log.debug("使用密码认证");
             }
 
-            this.session.setConfig("StrictHostKeyChecking", "no");
-            this.session.setTimeout(5000);
-            this.session.setServerAliveInterval(30000);
-            this.session.setConfig("ServerAliveCountMax", "3");
-            this.session.connect();
-            log.info("SSH会话连接成功 [{}@{}]", this.serverInfo.getUsername(), this.serverInfo.getHost());
+            session.setConfig("StrictHostKeyChecking", "no");
+            session.setTimeout(5000);
+            session.setServerAliveInterval(30000);
+            session.setConfig("ServerAliveCountMax", "3");
+            session.connect();
+
+            log.info("SSH会话连接成功 [{}@{}]", serverInfo.getUsername(), serverInfo.getHost());
         } catch (JSchException e) {
             ConnectErrorCode errorCode = ConnectErrorCode.classifyFromMessage(e.getMessage());
-            String connectionInfo = String.format("%s@%s:%d", serverInfo.getUsername(), serverInfo.getHost(), serverInfo.getPort());
-            log.error("SSH连接失败 [{}] - {}: {}", new Object[]{errorCode.name(), connectionInfo, e.getMessage()});
-            throw new ConnectionException(errorCode, this.serverInfo.getServerId(), connectionInfo, e.getMessage());
+            String connectionInfo = String.format(
+                    "%s@%s:%d",
+                    serverInfo.getUsername(),
+                    serverInfo.getHost(),
+                    serverInfo.getPort()
+            );
+            log.error("SSH连接失败 [{}] - {}: {}", errorCode.name(), connectionInfo, e.getMessage());
+            throw new ConnectionException(errorCode, serverInfo.getServerId(), connectionInfo, e.getMessage());
         }
     }
 
     private void startKeepaliveThread() {
         Thread keepaliveThread = new Thread(() -> {
-            while(!this.isClosed && this.isConnected()) {
+            while (!isClosed && isConnected()) {
                 try {
                     Thread.sleep(30000L);
-                    if (!this.isClosed) {
-                        this.executeCommand("echo 心跳检测 > /dev/null");
+                    if (!isClosed) {
+                        executeCommand("echo 心跳检测 > /dev/null");
                         log.trace("心跳检测成功");
                     }
                 } catch (Exception e) {
                     log.warn("心跳检测异常: {}", e.getMessage());
                 }
             }
-
             log.info("心跳线程已终止");
         });
+
         keepaliveThread.setDaemon(true);
-        keepaliveThread.setName("SSH-Keepalive-" + this.serverInfo.getHost());
+        keepaliveThread.setName("SSH-Keepalive-" + serverInfo.getHost());
         keepaliveThread.start();
     }
 
     public String executeCommand(String command) throws CommandExecutionException {
-        this.checkConnectionState(command);
+        checkConnectionState(command);
         ChannelExec channel = null;
 
         try {
             log.debug("执行命令: {}", command);
-            channel = (ChannelExec) this.session.openChannel("exec");
+            channel = (ChannelExec) session.openChannel("exec");
             channel.setCommand(command);
             channel.setInputStream(null);
 
@@ -94,7 +104,7 @@ public class SshConnection implements ServerConnection, AutoCloseable {
             channel.setErrStream(error);
 
             channel.connect();
-            this.waitForChannelClosed(channel, command);
+            waitForChannelClosed(channel, command);
 
             int exitCode = channel.getExitStatus();
             String errorOutput = error.toString().trim();
@@ -103,7 +113,7 @@ public class SshConnection implements ServerConnection, AutoCloseable {
                 throw new CommandExecutionException(
                         ConnectErrorCode.COMMAND_EXECUTION_FAILED,
                         command,
-                        this.serverInfo.getServerId(),
+                        serverInfo.getServerId(),
                         errorOutput
                 );
             }
@@ -116,7 +126,7 @@ public class SshConnection implements ServerConnection, AutoCloseable {
             throw new CommandExecutionException(
                     ConnectErrorCode.CHANNEL_FAILURE,
                     command,
-                    this.serverInfo.getServerId(),
+                    serverInfo.getServerId(),
                     e.getMessage()
             );
         } finally {
@@ -127,19 +137,19 @@ public class SshConnection implements ServerConnection, AutoCloseable {
     }
 
     public void uploadFile(String localPath, String remotePath) throws FileTransferException {
-        this.checkConnectionState("文件上传");
+        checkConnectionState("文件上传");
         ChannelSftp channel = null;
 
         try (InputStream input = Files.newInputStream(Paths.get(localPath))) {
             log.info("开始上传文件: {} -> {}", localPath, remotePath);
-            channel = (ChannelSftp) this.session.openChannel("sftp");
+            channel = (ChannelSftp) session.openChannel("sftp");
             channel.connect(30000);
             channel.put(input, remotePath);
 
             if (channel.stat(remotePath) == null) {
                 throw new FileTransferException(
                         ConnectErrorCode.FILE_UPLOAD_FAILED,
-                        this.serverInfo.getServerId(),
+                        serverInfo.getServerId(),
                         "文件上传验证失败"
                 );
             }
@@ -149,12 +159,71 @@ public class SshConnection implements ServerConnection, AutoCloseable {
             log.error("文件上传异常: {}", e.getMessage());
             throw new FileTransferException(
                     ConnectErrorCode.FILE_UPLOAD_FAILED,
-                    this.serverInfo.getServerId(),
+                    serverInfo.getServerId(),
                     "文件上传失败: " + e.getMessage()
             );
         } finally {
             if (channel != null) {
                 channel.disconnect();
+            }
+        }
+    }
+
+    @Override
+    public void uploadDirectory(String localDir, String remoteDir) throws FileTransferException {
+        checkConnectionState("目录上传");
+        Path path = Paths.get(localDir);
+        String archiveName = path.getFileName().toString() + ".tar.gz";
+        Path archivePath = Paths.get(System.getProperty("java.io.tmpdir"), archiveName);
+
+        try {
+            // 本地先打包
+            log.info("开始打包本地目录: {} -> {}", localDir, archivePath);
+            Process process = new ProcessBuilder()
+                    .directory(path.toFile().getParentFile())
+                    .command("tar", "-czf", archivePath.toString(), path.getFileName().toString())
+                    .inheritIO()
+                    .start();
+            if (process.waitFor() != 0) {
+                throw new IOException("本地目录打包失败，退出码: " + process.exitValue());
+            }
+
+            // 上传压缩包
+            String remoteArchive = remoteDir + "/" + archiveName;
+            uploadFile(archivePath.toString(), remoteArchive);
+
+            // 确保目标目录存在
+            executeCommand("mkdir -p " + remoteDir);
+
+            // 远程解压
+            String extractCmd = String.format("tar -xzf %s -C %s", remoteArchive, remoteDir);
+            executeCommand(extractCmd);
+            log.info("远程解压完成: {}", remoteDir);
+
+            // 删除远程压缩包
+            executeCommand("rm -f " + remoteArchive);
+
+            log.info("目录上传成功: {}", remoteDir);
+
+        } catch (IOException | InterruptedException e) {
+            log.error("目录打包/上传异常: {}", e.getMessage(), e);
+            throw new FileTransferException(
+                    ConnectErrorCode.FILE_UPLOAD_FAILED,
+                    serverInfo.getServerId(),
+                    "目录上传失败: " + e.getMessage()
+            );
+        } catch (CommandExecutionException e) {
+            log.error("远程解压异常: {}", e.getMessage(), e);
+            throw new FileTransferException(
+                    ConnectErrorCode.COMMAND_EXECUTION_FAILED,
+                    serverInfo.getServerId(),
+                    "远程解压失败: " + e.getMessage()
+            );
+        } finally {
+            try {
+                Files.deleteIfExists(archivePath);
+            } catch (IOException ignored) {
+                log.warn("临时文件删除失败: {}", archivePath);
             }
         }
     }
@@ -170,7 +239,7 @@ public class SshConnection implements ServerConnection, AutoCloseable {
                     throw new CommandExecutionException(
                             ConnectErrorCode.COMMAND_TIMEOUT,
                             command,
-                            this.serverInfo.getServerId(),
+                            serverInfo.getServerId(),
                             "操作超时(" + timeoutMillis + "ms)"
                     );
                 }
@@ -182,44 +251,49 @@ public class SshConnection implements ServerConnection, AutoCloseable {
             throw new CommandExecutionException(
                     ConnectErrorCode.COMMAND_INTERRUPTED,
                     command,
-                    this.serverInfo.getServerId(),
+                    serverInfo.getServerId(),
                     "操作被中断"
             );
         }
     }
 
     private void checkConnectionState(String currentOperation) throws CommandExecutionException {
-        if (this.isClosed) {
+        if (isClosed) {
             log.error("连接已关闭，操作被拒绝: {}", currentOperation);
-            throw new CommandExecutionException(ConnectErrorCode.CONNECTION_CLOSED, currentOperation, this.serverInfo.getServerId(), "连接已被显式关闭");
-        } else if (!this.isConnected()) {
+            throw new CommandExecutionException(
+                    ConnectErrorCode.CONNECTION_CLOSED,
+                    currentOperation,
+                    serverInfo.getServerId(),
+                    "连接已被显式关闭"
+            );
+        } else if (!isConnected()) {
             log.error("连接未激活，操作被拒绝: {}", currentOperation);
-            throw new CommandExecutionException(ConnectErrorCode.NOT_CONNECTED, currentOperation, this.serverInfo.getServerId(), this.session == null ? "会话未初始化" : "连接已断开");
+            throw new CommandExecutionException(
+                    ConnectErrorCode.NOT_CONNECTED,
+                    currentOperation,
+                    serverInfo.getServerId(),
+                    session == null ? "会话未初始化" : "连接已断开"
+            );
         }
     }
 
     public synchronized void disconnect() {
-        if (!this.isClosed) {
+        if (!isClosed) {
             log.info("正在关闭SSH连接...");
-            this.isClosed = true;
-            if (this.session != null) {
-                this.session.disconnect();
+            isClosed = true;
+            if (session != null) {
+                session.disconnect();
             }
-
             log.info("SSH连接已关闭");
         }
-
     }
 
+    @Override
     public void close() {
-        this.disconnect();
+        disconnect();
     }
 
     public boolean isConnected() {
-        return !this.isClosed && this.session != null && this.session.isConnected();
-    }
-
-    public ServerInfo getServerInfo() {
-        return this.serverInfo;
+        return !isClosed && session != null && session.isConnected();
     }
 }

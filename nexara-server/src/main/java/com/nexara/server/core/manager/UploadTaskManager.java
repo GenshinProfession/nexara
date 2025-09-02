@@ -40,8 +40,8 @@ public class UploadTaskManager {
 
     private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
     private static final String REDIS_KEY_PREFIX = "upload:";
-    private static final String CHUNK_TEMP_DIR  = System.getProperty("user.dir") + "/file-temp/";
-    private static final String MERGE_FINAL_DIR = System.getProperty("user.dir") + "/project/";
+    private static final String CHUNK_TEMP_DIR  = System.getProperty("user.dir") + "/file/temp";
+    private static final String MERGE_FINAL_DIR = System.getProperty("user.dir") + "/file/formal";
 
     /**
      * 初始化任务进度

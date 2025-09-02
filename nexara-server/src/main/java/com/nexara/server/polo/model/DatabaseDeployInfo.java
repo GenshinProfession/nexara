@@ -6,13 +6,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class DatabaseDeployInfo {
     private String localFilePath;
-    private String remoteFilePath;
     private DatabaseType databaseType;
-    private String initScriptPath;
+    private List<String> initScriptPath;
+    private int index;
 }
