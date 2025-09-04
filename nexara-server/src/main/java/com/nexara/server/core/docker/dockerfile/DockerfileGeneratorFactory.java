@@ -1,4 +1,4 @@
-package com.nexara.server.core.docker;
+package com.nexara.server.core.docker.dockerfile;
 
 import com.nexara.server.core.docker.dockerfile.DockerfileGenerator;
 import com.nexara.server.polo.enums.CodeLanguage;

@@ -12,12 +12,15 @@ import java.util.List;
 public class JavaServiceConfigGenerator implements ServiceConfigGenerator {
 
     @Override
-    public DockerComposeConfig.Service generateServiceConfig(BackendDeployInfo backend, String projectName, String serviceName) {
+    public DockerComposeConfig.Service generateServiceConfig(BackendDeployInfo backend, String basePath, String serviceName) {
         DockerComposeConfig.Service service = new DockerComposeConfig.Service();
 
+        // 构建路径相对于 docker-compose.yml 文件的位置
+        String buildPath = "./backends/backend-" + backend.getIndex();
+
         // 通用配置
-        service.setBuild("./" + backend.getLocalFilePath());
-        service.setImage(projectName + "-" + serviceName + ":latest");
+        service.setBuild(buildPath);
+        service.setImage(serviceName + ":latest");
         service.setPorts(List.of(backend.getPort() + ":" + backend.getPort())); // 使用传入的端口
         service.setRestart("unless-stopped");
 

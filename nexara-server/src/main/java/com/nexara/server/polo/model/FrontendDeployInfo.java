@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class FrontendDeployInfo {
     private String localFilePath;
-    private String remoteFilePath;
     private int port;
     private String websitePath;
     private int index;

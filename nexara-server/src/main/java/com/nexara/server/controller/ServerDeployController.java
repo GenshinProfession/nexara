@@ -25,10 +25,17 @@ public class ServerDeployController {
 
     @Operation(summary = "检测语言及其版本")
     @PostMapping("/detect")
-    public AjaxResult detectLanguageAndVersion(
-            @RequestParam("file") MultipartFile file) {
-        return serverDeployService.detectLanguageAndVersion(file);
+    public AjaxResult detectLanguageAndVersion(@RequestParam("filePath") String filePath) {
+        return serverDeployService.detectLanguageAndVersion(filePath);
     }
+
+    @Operation(summary = "校验前端包的合理性")
+    @PostMapping("/check-front")
+    public AjaxResult checkFront(@RequestParam("filePath") String filePath){
+        // TODO  校验包第一层里面含有html,否则会报错
+        return null;
+    }
+
 
     @Operation(summary = "部署项目")
     @PostMapping("/deploy")

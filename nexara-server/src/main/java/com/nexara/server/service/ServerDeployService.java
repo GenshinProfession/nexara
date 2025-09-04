@@ -33,14 +33,14 @@ public class ServerDeployService {
 
 
     // 组合方法：同时检测语言和版本
-    public AjaxResult detectLanguageAndVersion(MultipartFile file) {
+    public AjaxResult detectLanguageAndVersion(String filePath) {
         try {
-            CodeLanguage language = packageManager.detectLanguage(file);
+            CodeLanguage language = packageManager.detectLanguage(filePath);
             if (language == CodeLanguage.UNKNOWN) {
                 return AjaxResult.error("无法识别语言类型");
             }
 
-            String version = packageManager.detectVersion(language, file);
+            String version = packageManager.detectVersion(language, filePath);
 
             return AjaxResult.success("检测成功", Map.of(
                     "language", language,

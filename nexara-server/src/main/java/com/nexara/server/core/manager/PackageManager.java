@@ -1,6 +1,7 @@
 package com.nexara.server.core.manager;
 
 import com.nexara.server.core.code.PackageDetector;
+import com.nexara.server.core.code.PackageFactory;
 import com.nexara.server.polo.enums.CodeLanguage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -17,16 +18,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class PackageManager {
 
-    private final Map<CodeLanguage, PackageDetector> detectorMap = new ConcurrentHashMap<>();
-
-    public PackageManager(List<PackageDetector> detectors){
-        for (PackageDetector detector : detectors) {
-            detectorMap.put(detector.getLanguage(), detector);
-        }
-    }
+    private final PackageFactory packageFactory;
 
     /** 检测语言 */
-    public CodeLanguage detectLanguage(MultipartFile file) {
+    public CodeLanguage detectLanguage(String filePath) {
         return detectorMap.values().stream()
                 .filter(detector -> detector.isSupported(file))
                 .map(PackageDetector::getLanguage)

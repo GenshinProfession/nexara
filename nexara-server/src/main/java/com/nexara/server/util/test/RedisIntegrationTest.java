@@ -3,15 +3,13 @@ package com.nexara.server.util.test;
 import com.nexara.server.ServerApplication;
 import com.nexara.server.core.connect.ConnectionFactory;
 import com.nexara.server.core.connect.product.ServerConnection;
-import com.nexara.server.core.docker.DockerfileFactory;
-import com.nexara.server.core.docker.DockerfileGenerator;
+import com.nexara.server.core.manager.DeployProjectManager;
 import com.nexara.server.core.os.OSFactory;
 import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.mapper.ServerStatusMapper;
 import com.nexara.server.polo.enums.CodeLanguage;
 import com.nexara.server.polo.enums.ServiceType;
-import com.nexara.server.polo.model.ServerInfo;
-import com.nexara.server.polo.model.ServerStatus;
+import com.nexara.server.polo.model.*;
 import com.nexara.server.core.manager.InitEnvTaskManager;
 import com.nexara.server.core.manager.PortCheckTaskManager;
 import com.nexara.server.core.manager.ServerMonitorManager;
@@ -23,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
@@ -55,7 +54,65 @@ public class RedisIntegrationTest {
     private ConnectionFactory connectionFactory;
 
     @Autowired
+    private DeployProjectManager deployProjectManager;
+
+    @Autowired
     private RedisUtils redisUtils;
+
+
+    @Test
+    public void TestDeploy(){
+        // 目前咱们后端文件的位置在这呢
+        String localFilePath = "C:\\Users\\BlueJack\\Desktop\\GraduationDesign\\nexara\\file\\formal\\app.jar";
+
+        // 目前咱们前端文件的位置在这呢
+        String localFrontFilePath = "C:\\Users\\BlueJack\\Desktop\\GraduationDesign\\nexara\\file\\formal\\dist";
+
+        DeployTaskDTO dto = new DeployTaskDTO();
+
+        dto.setProjectName("Gaepress");
+        dto.setServerId("my_app");
+
+        // 生成随机部署时间（最近30天内）
+        LocalDateTime randomDeployTime = LocalDateTime.now()
+                .minusDays(new Random().nextInt(30))
+                .minusHours(new Random().nextInt(24))
+                .minusMinutes(new Random().nextInt(60));
+        dto.setDeployTime(randomDeployTime);
+
+        // 生成随机项目简介
+        String[] descriptions = {
+                "一个高性能的微服务架构项目，采用Spring Cloud构建",
+                "企业级内容管理系统，支持多租户和权限管理",
+                "电商平台后端服务，包含商品、订单、支付等模块"
+        };
+        String randomDescription = descriptions[new Random().nextInt(descriptions.length)];
+        dto.setProjectDescription(randomDescription);
+
+        // 创建一个后端信息完整集合
+        List<BackendDeployInfo> backendDeployInfos = new ArrayList<>();
+
+        // 新增一个完整的后端文件类
+        BackendDeployInfo backendDeployInfo = new BackendDeployInfo();
+        backendDeployInfo.setCodeLanguage(CodeLanguage.JAVA);
+        backendDeployInfo.setIndex(1);
+        backendDeployInfo.setPort(8082);
+        backendDeployInfo.setVersion(String.valueOf(21));
+        backendDeployInfo.setLocalFilePath(localFilePath);
+        backendDeployInfos.add(backendDeployInfo);
+
+        dto.setBackends(backendDeployInfos);
+
+        // 新增一个前端文件类
+        FrontendDeployInfo frontendDeployInfo = new FrontendDeployInfo();
+        frontendDeployInfo.setIndex(1);
+        frontendDeployInfo.setWebsitePath("/g");
+        frontendDeployInfo.setLocalFilePath(localFrontFilePath);
+
+        // 该前后端暂时都无需数据库
+
+        deployProjectManager.deployProject(dto);
+    }
 
     @Test
     public void testMapper(){

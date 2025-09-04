@@ -38,35 +38,27 @@ public class DeployProjectManager {
             dto.setServerId(selectServer());
         }
 
-        ServerConnection connection = connectionFactory.createConnection(
-                serverInfoMapper.findByServerId(dto.getServerId())
-        );
-
         // 1. 创建本地项目目录结构
-        String localProjectPath = createProjectStructure(dto.getProjectName());
+        String projectPath = getProjectPath(dto.getProjectName());
+        createProjectStructure(projectPath);
 
         try {
-            // 2. 整理并移动所有文件到项目目录
-            organizeProjectFiles(dto, localProjectPath);
+            // 2. 整理并复制所有文件到项目目录
+            organizeProjectFiles(dto, projectPath);
 
             // 3. 生成 Docker Compose 和 Dockerfile
-            Path composePath = dockerComposeFactory.generateComposeFile(
-                    dto.getBackends(),
-                    dto.getProjectName(),
-                    localProjectPath
-            );
+            dockerComposeFactory.generateComposeFile(dto.getFrontends(),dto.getBackends(), projectPath);
 
             // 4. 上传整个项目目录到远程服务器
-            uploadEntireProject(dto.getProjectName(), localProjectPath, connection);
+            ServerConnection connection = connectionFactory.createConnection(
+                    serverInfoMapper.findByServerId(dto.getServerId())
+            );
+//            uploadEntireProject(dto.getProjectName(), projectPath, connection);
 
             // 5. 执行部署
 
         } catch (Exception e) {
             log.error("Deployment failed", e);
-
-            // 如果部署过程中报错, 则会清除全部文件
-            cleanupLocalFiles(localProjectPath);
-
             // 抛出异常
             throw new RuntimeException("Deployment failed", e);
         }
@@ -75,8 +67,7 @@ public class DeployProjectManager {
     /**
      * 创建本地项目目录结构
      */
-    private String createProjectStructure(String projectName) {
-        String basePath = LOCAL_UPLOAD_PREFIX + projectName;
+    private void createProjectStructure(String basePath) {
         try {
             // 创建主目录
             Files.createDirectories(Paths.get(basePath));
@@ -87,11 +78,13 @@ public class DeployProjectManager {
             Files.createDirectories(Paths.get(basePath, "databases"));
 
             log.info("Created project structure at: {}", basePath);
-            return basePath;
-
         } catch (IOException e) {
             throw new RuntimeException("Failed to create project structure", e);
         }
+    }
+
+    private String getProjectPath(String projectName){
+        return System.getProperty("user.dir") + LOCAL_UPLOAD_PREFIX + projectName;
     }
 
     /**
@@ -99,32 +92,37 @@ public class DeployProjectManager {
      */
     private void organizeProjectFiles(DeployTaskDTO dto, String projectPath) {
         // 处理后端文件
-        dto.getBackends().forEach(backend -> {
-            String serviceDir = "backend-" + backend.getIndex() + "-"
-                    + backend.getCodeLanguage().name().toLowerCase();
-            String targetPath = projectPath + "/backends/" + serviceDir;
-
-            createDirAndMove(backend.getLocalFilePath(), targetPath);
-        });
+        if (dto.getBackends() != null) {
+            dto.getBackends().forEach(backend -> {
+                String serviceDir = "backend-" + backend.getIndex();
+                String targetPath = projectPath + "/backends/" + serviceDir;
+                createDirAndCopy(backend.getLocalFilePath(), targetPath);
+            });
+        }
 
         // 处理前端文件
-        dto.getFrontends().forEach(frontend -> {
-            String serviceDir = "frontend-" + frontend.getIndex();
-            String targetPath = projectPath + "/frontends/" + serviceDir;
-
-            createDirAndMove(frontend.getLocalFilePath(), targetPath);
-        });
+        if (dto.getFrontends() != null) {
+            dto.getFrontends().forEach(frontend -> {
+                String serviceDir = "frontend-" + frontend.getIndex();
+                String targetPath = projectPath + "/frontends/" + serviceDir;
+                createDirAndCopy(frontend.getLocalFilePath(), targetPath);
+            });
+        }
 
         // 处理数据库文件
-        dto.getDatabases().forEach(database -> {
-            String dbDir = "database-" + database.getIndex();
-            String targetPath = projectPath + "/databases/" + dbDir;
-
-            createDirAndMove(database.getLocalFilePath(), targetPath);
-        });
+        if (dto.getDatabases() != null) {
+            dto.getDatabases().forEach(database -> {
+                String dbDir = "database-" + database.getIndex();
+                String targetPath = projectPath + "/databases/" + dbDir;
+                createDirAndCopy(database.getLocalFilePath(), targetPath);
+            });
+        }
     }
 
-    private void createDirAndMove(String sourcePath, String targetDir) {
+    /**
+     * 创建目录并复制文件（修改为复制操作）
+     */
+    private void createDirAndCopy(String sourcePath, String targetDir) {
         try {
             Files.createDirectories(Paths.get(targetDir));
             Path source = Paths.get(sourcePath);
@@ -141,10 +139,13 @@ public class DeployProjectManager {
             }
 
             Path target = Paths.get(targetDir, "app" + extension);
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
-            log.info("Moved file {} -> {}", source, target);
+
+            // 使用复制而不是移动
+            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+            log.info("Copied file {} -> {}", source, target);
+
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create directory or move file", e);
+            throw new RuntimeException("Failed to create directory or copy file", e);
         }
     }
 
@@ -162,28 +163,6 @@ public class DeployProjectManager {
         } catch (Exception e) {
             log.error("项目目录上传失败", e);
             throw new RuntimeException("项目目录上传失败: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * 清理本地临时文件
-     */
-    private void cleanupLocalFiles(String localPath) {
-        try {
-            if (Files.exists(Paths.get(localPath))) {
-                Files.walk(Paths.get(localPath))
-                        .sorted((a, b) -> b.compareTo(a))
-                        .forEach(path -> {
-                            try {
-                                Files.deleteIfExists(path);
-                            } catch (IOException e) {
-                                log.warn("Failed to delete file: {}", path, e);
-                            }
-                        });
-                log.info("Cleaned up local files: {}", localPath);
-            }
-        } catch (IOException e) {
-            log.warn("Failed to cleanup local files: {}", localPath, e);
         }
     }
 
