@@ -6,6 +6,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Java 包检测器
@@ -19,14 +22,15 @@ public class JavaPackageDetector implements PackageDetector {
     }
 
     @Override
-    public boolean isSupported(MultipartFile file) {
+    public boolean isSupported(String filePath) {
         try {
-            String fileName = file.getOriginalFilename();
+            Path path = Paths.get(filePath);
+            String fileName = path.getFileName().toString();
             if (fileName != null && fileName.endsWith(".jar")) {
                 return true;
             }
 
-            String content = new String(file.getBytes(), StandardCharsets.UTF_8);
+            String content =Files.readString(path, StandardCharsets.UTF_8);
             // 常见 Java 项目构建文件特征：Maven / Gradle
             return content.contains("<groupId>") || content.contains("implementation(");
         } catch (IOException ignored) {}
@@ -34,9 +38,9 @@ public class JavaPackageDetector implements PackageDetector {
     }
 
     @Override
-    public String detectVersion(MultipartFile file) {
+    public String detectVersion(String filePath) {
         try {
-            String content = new String(file.getBytes(), StandardCharsets.UTF_8);
+            String content = Files.readString(Paths.get(filePath), StandardCharsets.UTF_8);
             if (content.contains("<maven.compiler.source>")) {
                 int start = content.indexOf("<maven.compiler.source>") + "<maven.compiler.source>".length();
                 int end = content.indexOf("</maven.compiler.source>", start);

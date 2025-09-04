@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.nexara.server.core.code.PackageFactory.detectorMap;
+
 /**
  * 包检测管理器
  */
@@ -23,17 +25,17 @@ public class PackageManager {
     /** 检测语言 */
     public CodeLanguage detectLanguage(String filePath) {
         return detectorMap.values().stream()
-                .filter(detector -> detector.isSupported(file))
+                .filter(detector -> detector.isSupported(filePath))
                 .map(PackageDetector::getLanguage)
                 .findFirst()
                 .orElse(CodeLanguage.UNKNOWN);
     }
 
     /** 检测版本 */
-    public String detectVersion(CodeLanguage language, MultipartFile file) {
-        PackageDetector detector = detectorMap.get(language);
+    public String detectVersion(CodeLanguage language, String filePath) {
+        PackageDetector detector = packageFactory.getDetector(language);
         if (detector != null) {
-            return detector.detectVersion(file);
+            return detector.detectVersion(filePath);
         }
         return "未知版本";
     }

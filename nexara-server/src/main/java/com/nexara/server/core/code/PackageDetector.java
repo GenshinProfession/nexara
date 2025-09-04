@@ -8,6 +8,6 @@ import org.springframework.web.multipart.MultipartFile;
  */
 public interface PackageDetector {
     CodeLanguage getLanguage();                  // 对应语言枚举
-    boolean isSupported(MultipartFile file);     // 是否是该语言包
-    String detectVersion(MultipartFile file);    // 检测版本
+    boolean isSupported(String filePath);     // 是否是该语言包
+    String detectVersion(String filePath);    // 检测版本
 }

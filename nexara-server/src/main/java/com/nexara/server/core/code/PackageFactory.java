@@ -12,15 +12,15 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @Log4j2
 public class PackageFactory {
-    private final Map<CodeLanguage, PackageDetector> generatorMap = new ConcurrentHashMap<>();
+    public static final Map<CodeLanguage, PackageDetector> detectorMap = new ConcurrentHashMap<>();
     public PackageFactory(List<PackageDetector> generators) {
         for (PackageDetector generator : generators) {
-            generatorMap.put(generator.getLanguage(), generator);
+            detectorMap.put(generator.getLanguage(), generator);
         }
     }
 
-    public PackageDetector getGenerator(CodeLanguage language) {
-        PackageDetector generator = generatorMap.get(language);
+    public PackageDetector getDetector(CodeLanguage language) {
+        PackageDetector generator = detectorMap.get(language);
         if (generator == null) {
             throw new IllegalArgumentException("Unsupported language: " + language);
         }
