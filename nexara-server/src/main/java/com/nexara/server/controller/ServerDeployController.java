@@ -6,7 +6,16 @@ import com.nexara.server.util.AjaxResult;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 @RestController
 @RequestMapping("/server/deploy")
@@ -31,11 +40,9 @@ public class ServerDeployController {
 
     @Operation(summary = "校验前端包的合理性")
     @PostMapping("/check-front")
-    public AjaxResult checkFront(@RequestParam("filePath") String filePath){
-        // TODO  校验包第一层里面含有html,否则会报错
-        return null;
+    public AjaxResult checkFront(@RequestParam("filePath") String filePath) {
+        return serverDeployService.validateFrontZip(filePath);
     }
-
 
     @Operation(summary = "部署项目")
     @PostMapping("/deploy")
