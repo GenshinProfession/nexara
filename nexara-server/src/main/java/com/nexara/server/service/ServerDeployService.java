@@ -1,6 +1,8 @@
 package com.nexara.server.service;
 
 import com.nexara.server.core.manager.DeployProjectManager;
+import com.nexara.server.core.manager.PackageManager;
+import com.nexara.server.polo.enums.CodeLanguage;
 import com.nexara.server.polo.model.DeployTaskDTO;
 import com.nexara.server.util.AjaxResult;
 import com.nexara.server.core.manager.PortCheckTaskManager;
@@ -24,7 +26,7 @@ import java.util.zip.ZipFile;
 public class ServerDeployService {
 
     private final PortCheckTaskManager portCheckTaskManager;
-//    private final PackageManager packageManager;
+    private final PackageManager packageManager;
     private final DeployProjectManager deployProjectManager;
     /**
      * 50 MB
@@ -112,27 +114,30 @@ public class ServerDeployService {
 
     // 组合方法：同时检测语言和版本
     public AjaxResult detectLanguageAndVersion(String filePath) {
-//        try {
-//            CodeLanguage language = packageManager.detectLanguage(filePath);
-//            if (language == CodeLanguage.UNKNOWN) {
-//                return AjaxResult.error("无法识别语言类型");
-//            }
-//
-//            String version = packageManager.detectVersion(language, filePath);
-//
-//            return AjaxResult.success("检测成功", Map.of(
-//                    "language", language,
-//                    "languageName", language.getDisplayName(),
-//                    "version", version,
-//                    "versionType", language.getVersionType()
-//            ));
-//        } catch (Exception e) {
-//            return AjaxResult.error("检测失败: " + e.getMessage());
-//        }
-        return null;
+        try {
+            CodeLanguage language = packageManager.detectLanguage(filePath);
+            if (language == CodeLanguage.UNKNOWN) {
+                return AjaxResult.error("无法识别语言类型");
+            }
+
+            String version = packageManager.detectVersion(language, filePath);
+
+            return AjaxResult.success("检测成功", Map.of(
+                    "language", language,
+                    "languageName", language.getDisplayName(),
+                    "version", version,
+                    "versionType", language.getVersionType()
+            ));
+        } catch (Exception e) {
+            return AjaxResult.error("检测失败: " + e.getMessage());
+        }
     }
 
     public AjaxResult deployProject(DeployTaskDTO deployTaskDTO) {
+        return AjaxResult.success();
+    }
+
+    public AjaxResult fetchUploadStatus(String taskId) {
         return AjaxResult.success();
     }
 }

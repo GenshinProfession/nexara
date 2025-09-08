@@ -50,5 +50,11 @@ public class ServerDeployController {
         return serverDeployService.deployProject(deployTaskDTO);
     }
 
+    @Operation(summary = "轮询部署项目情况")
+    @GetMapping("/status")
+    public AjaxResult fetchDeployStatus(@RequestParam("taskId") String taskId) {
+        return serverDeployService.fetchUploadStatus(taskId);
+    }
+
 
 }
