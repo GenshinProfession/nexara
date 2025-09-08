@@ -1,4 +1,4 @@
-package com.nexara.server.core.docker.config;
+package com.nexara.server.core.docker.backend.config;
 
 import com.nexara.server.polo.enums.CodeLanguage;
 import lombok.extern.log4j.Log4j2;

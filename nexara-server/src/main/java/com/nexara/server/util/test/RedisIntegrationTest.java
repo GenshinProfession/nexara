@@ -89,10 +89,9 @@ public class RedisIntegrationTest {
         String randomDescription = descriptions[new Random().nextInt(descriptions.length)];
         dto.setProjectDescription(randomDescription);
 
-        // 创建一个后端信息完整集合
+        // 新增一个后端文件类
         List<BackendDeployInfo> backendDeployInfos = new ArrayList<>();
 
-        // 新增一个完整的后端文件类
         BackendDeployInfo backendDeployInfo = new BackendDeployInfo();
         backendDeployInfo.setCodeLanguage(CodeLanguage.JAVA);
         backendDeployInfo.setIndex(1);
@@ -104,10 +103,15 @@ public class RedisIntegrationTest {
         dto.setBackends(backendDeployInfos);
 
         // 新增一个前端文件类
+        List<FrontendDeployInfo>  frontendDeployInfos = new ArrayList<>();
+
         FrontendDeployInfo frontendDeployInfo = new FrontendDeployInfo();
         frontendDeployInfo.setIndex(1);
-        frontendDeployInfo.setWebsitePath("/g");
         frontendDeployInfo.setLocalFilePath(localFrontFilePath);
+        frontendDeployInfo.setAccessPath("/app");
+        frontendDeployInfos.add(frontendDeployInfo);
+
+        dto.setFrontends(frontendDeployInfos);
 
         // 该前后端暂时都无需数据库
 

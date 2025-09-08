@@ -101,10 +101,11 @@
             <version>2.12.0</version>
         </dependency>
 
+        <!-- 添加 Jackson YAML -->
         <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>2.1</version>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>2.15.0</version>
         </dependency>
     </dependencies>
 </project>

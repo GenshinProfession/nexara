@@ -1,15 +1,12 @@
 package com.nexara.server.service;
 
 import com.nexara.server.core.manager.DeployProjectManager;
-import com.nexara.server.polo.enums.CodeLanguage;
 import com.nexara.server.polo.model.DeployTaskDTO;
 import com.nexara.server.util.AjaxResult;
-import com.nexara.server.core.manager.PackageManager;
 import com.nexara.server.core.manager.PortCheckTaskManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -19,7 +16,7 @@ import java.util.Map;
 public class ServerDeployService {
 
     private final PortCheckTaskManager portCheckTaskManager;
-    private final PackageManager packageManager;
+//    private final PackageManager packageManager;
     private final DeployProjectManager deployProjectManager;
 
     public AjaxResult checkPort(String serverId, int port) {
@@ -34,33 +31,27 @@ public class ServerDeployService {
 
     // 组合方法：同时检测语言和版本
     public AjaxResult detectLanguageAndVersion(String filePath) {
-        try {
-            CodeLanguage language = packageManager.detectLanguage(filePath);
-            if (language == CodeLanguage.UNKNOWN) {
-                return AjaxResult.error("无法识别语言类型");
-            }
-
-            String version = packageManager.detectVersion(language, filePath);
-
-            return AjaxResult.success("检测成功", Map.of(
-                    "language", language,
-                    "languageName", language.getDisplayName(),
-                    "version", version,
-                    "versionType", language.getVersionType()
-            ));
-        } catch (Exception e) {
-            return AjaxResult.error("检测失败: " + e.getMessage());
-        }
+//        try {
+//            CodeLanguage language = packageManager.detectLanguage(filePath);
+//            if (language == CodeLanguage.UNKNOWN) {
+//                return AjaxResult.error("无法识别语言类型");
+//            }
+//
+//            String version = packageManager.detectVersion(language, filePath);
+//
+//            return AjaxResult.success("检测成功", Map.of(
+//                    "language", language,
+//                    "languageName", language.getDisplayName(),
+//                    "version", version,
+//                    "versionType", language.getVersionType()
+//            ));
+//        } catch (Exception e) {
+//            return AjaxResult.error("检测失败: " + e.getMessage());
+//        }
+        return null;
     }
 
     public AjaxResult deployProject(DeployTaskDTO deployTaskDTO) {
-        // 根据远程路径把所有文件调配到一个对应的文件夹中
-
-        // 后端: 生成DockerCompose文件
-
-        // 前端: 配置Nginx文件
-
-        // 数据库：传入sql文件并且执行
         return AjaxResult.success();
     }
 }

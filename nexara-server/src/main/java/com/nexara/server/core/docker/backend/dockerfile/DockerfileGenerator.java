@@ -1,4 +1,4 @@
-package com.nexara.server.core.docker.dockerfile;
+package com.nexara.server.core.docker.backend.dockerfile;
 
 import com.nexara.server.polo.enums.CodeLanguage;
 import com.nexara.server.polo.model.BackendDeployInfo;
