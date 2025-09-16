@@ -15,6 +15,4 @@ import java.util.List;
 public class DatabaseDeployInfo {
     private String localFilePath;
     private DatabaseType databaseType;
-    private List<String> initScriptPath;
-    private int index;
 }

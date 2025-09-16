@@ -22,10 +22,10 @@ public class FrontendServiceConfigGenerator {
         List<String> volumes = new ArrayList<>();
 
         // 挂载整个前端包到里面进去
-        volumes.add("./frontends:/usr/share/nginx/html:ro");
+        volumes.add("./frontends:/usr/share/nginx/html");
 
         // 挂载 nginx.conf
-        volumes.add("./frontends/nginx.conf:/etc/nginx/nginx.conf:ro");
+        volumes.add("./frontends/nginx.conf:/etc/nginx/nginx.conf");
         service.setVolumes(volumes);
 
         // 统一映射到 8000:80

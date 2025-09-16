@@ -14,8 +14,8 @@ import java.util.List;
 @Builder
 public class DeployTaskDTO {
 
-    // 服务器Id
-    private String serverId;
+    // 服务器信息
+    private ServerInfo serverInfo;
 
     // 项目名称
     private String projectName;

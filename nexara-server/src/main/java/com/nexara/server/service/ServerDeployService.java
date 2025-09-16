@@ -1,6 +1,6 @@
 package com.nexara.server.service;
 
-import com.nexara.server.core.manager.DeployProjectManager;
+import com.nexara.server.core.deploy.DeployProjectManager;
 import com.nexara.server.core.manager.PackageManager;
 import com.nexara.server.polo.enums.CodeLanguage;
 import com.nexara.server.polo.model.DeployTaskDTO;

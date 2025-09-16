@@ -14,23 +14,23 @@ services:
      - "/tmp:/tmp"
     restart: "unless-stopped"
     networks:
-     - "network-ee048f3a"
+     - "network-e45caca4"
   frontend-service:
     image: "nginx:alpine"
     ports:
      - "8000:80"
     volumes:
-     - "./frontends:/usr/share/nginx/html:ro"
-     - "./frontends/nginx.conf:/etc/nginx/nginx.conf:ro"
+     - "./frontends:/usr/share/nginx/html"
+     - "./frontends/nginx.conf:/etc/nginx/nginx.conf"
     restart: "unless-stopped"
     networks:
-     - "network-ee048f3a"
+     - "network-e45caca4"
     command:
      - "nginx"
      - "-g"
      - "daemon off;"
 networks:
-  network-ee048f3a:
+  network-e45caca4:
     driver: "bridge"
     external: false
-    name: "network-ee048f3a"
+    name: "network-e45caca4"

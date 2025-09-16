@@ -2,8 +2,9 @@ package com.nexara.server.util.test;
 
 import com.nexara.server.ServerApplication;
 import com.nexara.server.core.connect.ConnectionFactory;
-import com.nexara.server.core.connect.product.ServerConnection;
-import com.nexara.server.core.manager.DeployProjectManager;
+import com.nexara.server.core.deploy.DeployProjectManager;
+import com.nexara.server.core.deploy.step.DeploymentStatusTree;
+import com.nexara.server.core.deploy.step.StepStatus;
 import com.nexara.server.core.os.OSFactory;
 import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.mapper.ServerStatusMapper;
@@ -71,7 +72,6 @@ public class RedisIntegrationTest {
         DeployTaskDTO dto = new DeployTaskDTO();
 
         dto.setProjectName("Gaepress");
-        dto.setServerId("my_app");
 
         // 生成随机部署时间（最近30天内）
         LocalDateTime randomDeployTime = LocalDateTime.now()
@@ -116,6 +116,64 @@ public class RedisIntegrationTest {
         // 该前后端暂时都无需数据库
 
         deployProjectManager.deployProject(dto);
+    }
+
+    @Test
+    public void TestGroup(){
+        // 1. 准备测试数据
+        ServerInfo myApp = serverInfoMapper.findByServerId("my_app");
+        DeployTaskDTO dto =  new DeployTaskDTO();
+        dto.setServerInfo(myApp);
+        dto.setProjectName("test-project");
+
+        // 2. 创建部署计划
+        System.out.println("=== 创建部署计划 ===");
+        DeploymentStatusTree statusTree = deployProjectManager.buildDeploymentPipeline(dto);
+        String deploymentId = statusTree.getDeploymentId();
+        System.out.println("部署ID: " + deploymentId);
+        System.out.println("初始状态: " + statusTree.getStatus());
+
+        // 3. 开始异步部署
+        System.out.println("\n=== 开始部署 ===");
+        deployProjectManager.startDeployment(deploymentId);
+
+        // 4. 模拟前端轮询查询状态
+        System.out.println("\n=== 模拟前端轮询 ===");
+        for (int i = 1; i <= 10; i++) {
+            try {
+                Thread.sleep(1000); // 每秒查询一次
+
+                DeploymentStatusTree currentStatus = deployProjectManager.getDeploymentStatus(deploymentId);
+                if (currentStatus != null) {
+                    System.out.println("第 " + i + " 秒 - 状态: " + currentStatus.getStatus() +
+                            ", 消息: " + currentStatus.getMessage());
+
+                    // 如果部署完成，停止轮询
+                    if (currentStatus.getStatus() == StepStatus.SUCCESS ||
+                            currentStatus.getStatus() == StepStatus.FAILED ||
+                            currentStatus.getStatus() == StepStatus.CANCELLED) {
+                        System.out.println("部署完成，最终状态: " + currentStatus.getStatus());
+                        break;
+                    }
+                } else {
+                    System.out.println("第 " + i + " 秒 - 状态信息不存在");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        // 5. 获取最终状态
+        DeploymentStatusTree finalStatus = deployProjectManager.getDeploymentStatus(deploymentId);
+        System.out.println("\n=== 最终结果 ===");
+        if (finalStatus != null) {
+            System.out.println("部署ID: " + finalStatus.getDeploymentId());
+            System.out.println("最终状态: " + finalStatus.getStatus());
+            System.out.println("最终消息: " + finalStatus.getMessage());
+        } else {
+            System.out.println("部署状态信息已丢失");
+        }
     }
 
     @Test
@@ -185,43 +243,6 @@ public class RedisIntegrationTest {
             System.err.println("获取 Redis 键时发生错误: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    @Test
-    public void DeployFront(){
-        ServerInfo myApp = serverInfoMapper.findByServerId("my_app");
-        ServerConnection connection = connectionFactory.createConnection(myApp);
-
-        // 函数:判断当前前端包是否符合规范, index.html（路径要记忆）、css、js、img（ai帮你写）
-        String indexPath = "/dist/index.html";
-
-        // 远程路径 /root/nexara
-        String remotePath = "/root/nexara";
-
-        // 上传文件到远程路径
-        connection.uploadFile("","");
-
-        // 添加文件访问权限
-        connection.executeCommand("chmod -R 777 /root/nexara");
-
-        // 那么最终前端文件的路径在
-        String finalPath = "/root/nexara/dist/index.html";
-
-        // 解压包（执行命令）
-        connection.executeCommand("tar -zxvf /root/nexara/dist.tar.gz -C /root/nexara");
-
-        // 解压以后删除原来的压缩包
-
-        // 填写front.conf，生成一份，上传到云服务器
-        // copy这一份到/etc/nginx/sites-available/
-        // 做软链接 告诉Nginx要通过这个文件,去执行这份conf
-
-        // 原来服务器上面可能存在旧的conf,可能需要你进行合并操作（先忽略)
-
-        // 重启Nginx
-        connection.executeCommand("nginx -s reload");
-
-        // 测试一下访问,web上试一下,如果访问不到
     }
 
 }
