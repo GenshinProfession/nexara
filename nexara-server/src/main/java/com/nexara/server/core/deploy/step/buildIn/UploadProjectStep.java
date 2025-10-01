@@ -1,40 +1,28 @@
 package com.nexara.server.core.deploy.step.buildIn;
 
-import com.nexara.server.core.connect.ConnectionFactory;
-import com.nexara.server.core.deploy.step.DeployContext;
-import com.nexara.server.core.deploy.step.DeployStep;
-import com.nexara.server.core.deploy.step.StepStatus;
-import com.nexara.server.mapper.ServerInfoMapper;
+import com.nexara.server.core.deploy.step.TaskContext;
+import com.nexara.server.core.deploy.step.TaskStep;
 import com.nexara.server.polo.model.DeployTaskDTO;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import static com.nexara.server.util.Constants.REMOTE_UPLOAD_PREFIX;
 
+/**
+ * @author BlueJack
+ */
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class UploadProjectStep implements DeployStep {
+public class UploadProjectStep extends TaskStep {
 
-    @Override
-    public String getName() {
-        return "上传项目到服务器";
+    protected UploadProjectStep() {
+        super("上传项目到服务器", "upload-project-to-server");
     }
 
     @Override
-    public String getKey() {
-        return "upload-project-to-server";
-    }
-
-    @Override
-    public StepStatus getStatus() {
-        return StepStatus.PENDING;
-    }
-
-    @Override
-    public void execute(DeployContext context) {
+    public void doExecute(TaskContext context) {
         try {
+            log.info("正在上传项目目录至远程服务器...");
             DeployTaskDTO dto = context.getTask();
             String projectName = dto.getProjectName();
             String localPath = context.getProjectPath();

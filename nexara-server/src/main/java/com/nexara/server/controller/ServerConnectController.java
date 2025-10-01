@@ -17,11 +17,11 @@ public class ServerConnectController {
 
     @PostMapping("/")
     public AjaxResult connectServer(@RequestBody ServerInfo serverInfo) {
-        return this.connectServerService.addNewServer(serverInfo);
+        return connectServerService.addNewServer(serverInfo);
     }
 
     @PostMapping("/test")
     public AjaxResult testConnectServer(@RequestBody ServerInfo serverInfo) throws Exception {
-        return this.connectServerService.testConnectServer(serverInfo);
+        return connectServerService.testConnectServer(serverInfo);
     }
 }

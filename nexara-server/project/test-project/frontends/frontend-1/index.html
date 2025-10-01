@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目状态监控 | Kubernetes 管理平台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --success: #4cc9f0;
+            --warning: #f8961e;
+            --danger: #f72585;
+            --card-bg: rgba(255, 255, 255, 0.97);
+            --glass: rgba(255, 255, 255, 0.15);
+            --shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDAiIGhlaWdodD0iNjAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC4wNSIgbnVtT2N0YXZlcz0iNSIgc3RpdGNoVGlsZXM9InN0aXRjaCIvPjxmZUNvbG9yTWF0cml4IHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIxIDAgMCAwIDAgMCAxIDAgMCAwIDAgMCAxIDAgMCAwIDAgMCAwLjA1IDAiLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIwLjEiLz48L3N2Zz4=');
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 2rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 导航栏 */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--dark);
+            text-decoration: none;
+        }
+
+        .navbar-brand img {
+            height: 32px;
+            margin-right: 0.75rem;
+        }
+
+        .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn i {
+            margin-right: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(67, 97, 238, 0.1);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #e5177e;
+        }
+
+        /* 项目标题 */
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .project-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .project-meta {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .meta-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-bottom: 0.25rem;
+        }
+
+        .meta-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-running {
+            background-color: rgba(76, 201, 240, 0.1);
+            color: var(--success);
+        }
+
+        .status-pending {
+            background-color: rgba(248, 150, 30, 0.1);
+            color: var(--warning);
+        }
+
+        .status-error {
+            background-color: rgba(247, 37, 133, 0.1);
+            color: var(--danger);
+        }
+
+        /* 主内容布局 */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sidebar-card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-title i {
+            margin-right: 0.5rem;
+            color: var(--primary);
+        }
+
+        /* 部署操作 */
+        .deploy-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .deploy-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .deploy-section-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--gray);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* 文件上传区域 */
+        .upload-zone {
+            border: 2px dashed rgba(67, 97, 238, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: var(--transition);
+            margin-bottom: 1rem;
+            background-color: rgba(255, 255, 255, 0.6);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .upload-zone.active {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.1);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.2);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(67, 97, 238, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(67, 97, 238, 0);
+            }
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+            transition: var(--transition);
+        }
+
+        .upload-text {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-size: 0.95rem;
+        }
+
+        .upload-hint {
+            color: var(--gray);
+            font-size: 0.8rem;
+        }
+
+        .file-list {
+            margin-top: 1rem;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: var(--transition);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .file-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .file-icon {
+            margin-right: 1rem;
+            color: var(--primary);
+            font-size: 1.2rem;
+            min-width: 24px;
+        }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--dark);
+        }
+
+        .file-details {
+            display: flex;
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 0.25rem;
+        }
+
+        .file-size {
+            margin-right: 1rem;
+        }
+
+        .file-remove {
+            color: var(--danger);
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 0.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-remove:hover {
+            background-color: rgba(247, 37, 133, 0.1);
+            transform: rotate(90deg);
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* 监控卡片 */
+        .monitor-card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .monitor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .monitor-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+        }
+
+        .monitor-title i {
+            margin-right: 0.75rem;
+            color: var(--primary);
+        }
+
+        .monitor-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+        }
+
+        .cluster-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-title {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .stat-title i {
+            margin-right: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-change {
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .stat-up {
+            color: var(--success);
+        }
+
+        .stat-down {
+            color: var(--danger);
+        }
+
+        /* 节点列表 */
+        .node-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .node-item {
+            background-color: white;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .node-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .node-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .node-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-healthy {
+            background-color: var(--success);
+            box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.3);
+        }
+
+        .status-warning {
+            background-color: var(--warning);
+            box-shadow: 0 0 0 3px rgba(248, 150, 30, 0.3);
+        }
+
+        .status-critical {
+            background-color: var(--danger);
+            box-shadow: 0 0 0 3px rgba(247, 37, 133, 0.3);
+        }
+
+        .node-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .node-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .node-meta-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .node-meta-item i {
+            margin-right: 0.25rem;
+        }
+
+        .node-resources {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .resource-bar {
+            width: 120px;
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .resource-fill {
+            height: 100%;
+            border-radius: 4px;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .cpu-fill {
+            background-color: var(--primary);
+        }
+
+        .memory-fill {
+            background-color: var(--accent);
+        }
+
+        .storage-fill {
+            background-color: var(--success);
+        }
+
+        .resource-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 0.25rem;
+            text-align: center;
+        }
+
+        /* Pod 列表 */
+        .pod-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .pod-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+            border-left: 4px solid var(--primary);
+        }
+
+        .pod-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .pod-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .pod-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .pod-name i {
+            margin-right: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .pod-status {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+        }
+
+        .pod-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .pod-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .pod-resources {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .pod-resource {
+            flex: 1;
+            text-align: center;
+        }
+
+        .pod-resource-value {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .pod-resource-label {
+            font-size: 0.7rem;
+            color: var(--gray);
+            margin-top: 0.25rem;
+        }
+
+        /* 部署历史 */
+        .deploy-history {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .history-item {
+            background-color: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .history-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(67, 97, 238, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+
+        .history-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .history-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .history-time {
+            display: flex;
+            align-items: center;
+        }
+
+        .history-time i {
+            margin-right: 0.25rem;
+        }
+
+        .history-action {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .cluster-stats {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .project-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .project-meta {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .node-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .node-resources {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .cluster-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .pod-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 项目标题 -->
+        <div class="project-header">
+            <div>
+                <h1 class="project-title">GAEPress 投稿系统</h1>
+                <div class="project-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">命名空间</span>
+                        <span class="meta-value">ecommerce-prod</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">部署时间</span>
+                        <span class="meta-value">2023-06-15 14:30</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">状态</span>
+                        <span class="meta-value">
+                            <span class="status-badge status-running">
+                                <i class="fas fa-circle"></i> 运行中
+                            </span>
+                        </span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">访问地址</span>
+                        <span class="meta-value">https://shop.example.com</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容布局 -->
+        <div class="dashboard-layout">
+            <!-- 侧边栏 -->
+            <div class="sidebar">
+                <!-- 部署操作 -->
+                <div class="sidebar-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-upload"></i> 部署操作
+                    </h3>
+
+                    <div class="deploy-actions">
+                        <div class="deploy-section">
+                            <div class="deploy-section-title">后端服务</div>
+                            <div class="upload-zone" id="backend-upload">
+                                <i class="fas fa-server upload-icon"></i>
+                                <div class="upload-text">上传后端文件</div>
+                                <div class="upload-hint">支持 .jar, .war, .zip</div>
+                                <input type="file" id="backend-files" style="display: none;" multiple>
+                            </div>
+                            <div class="file-list" id="backend-file-list"></div>
+                            <button class="btn btn-primary btn-sm" style="width: 100%;">
+                                <i class="fas fa-redo"></i> 重新部署后端
+                            </button>
+                        </div>
+
+                        <div class="deploy-section">
+                            <div class="deploy-section-title">前端服务</div>
+                            <div class="upload-zone" id="frontend-upload">
+                                <i class="fas fa-laptop-code upload-icon"></i>
+                                <div class="upload-text">上传前端文件</div>
+                                <div class="upload-hint">支持 .html, .js, .css, .zip</div>
+                                <input type="file" id="frontend-files" style="display: none;" multiple>
+                            </div>
+                            <div class="file-list" id="frontend-file-list"></div>
+                            <button class="btn btn-primary btn-sm" style="width: 100%;">
+                                <i class="fas fa-redo"></i> 重新部署前端
+                            </button>
+                        </div>
+
+                        <div class="deploy-section">
+                            <div class="deploy-section-title">数据库</div>
+                            <div class="upload-zone" id="db-upload">
+                                <i class="fas fa-database upload-icon"></i>
+                                <div class="upload-text">上传数据库脚本</div>
+                                <div class="upload-hint">支持 .sql, .dump</div>
+                                <input type="file" id="db-files" style="display: none;">
+                            </div>
+                            <div class="file-list" id="db-file-list"></div>
+                            <button class="btn btn-outline btn-sm" style="width: 100%;">
+                                <i class="fas fa-sync"></i> 执行数据库更新
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快速操作 -->
+                <div class="sidebar-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-bolt"></i> 快速操作
+                    </h3>
+                    <div class="quick-actions">
+                        <button class="btn btn-outline" style="width: 100%; margin-bottom: 0.75rem;">
+                            <i class="fas fa-expand"></i> 扩展副本
+                        </button>
+                        <button class="btn btn-outline" style="width: 100%; margin-bottom: 0.75rem;">
+                            <i class="fas fa-compress"></i> 缩减副本
+                        </button>
+                        <button class="btn btn-outline" style="width: 100%; margin-bottom: 0.75rem;">
+                            <i class="fas fa-trash-restore"></i> 回滚版本
+                        </button>
+                        <button class="btn btn-danger" style="width: 100%;">
+                            <i class="fas fa-power-off"></i> 停止服务
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 部署历史 -->
+                <div class="sidebar-card">
+                    <h3 class="card-title">
+                        <i class="fas fa-history"></i> 最近部署
+                    </h3>
+                    <div class="deploy-history">
+                        <div class="history-item">
+                            <div class="history-info">
+                                <div class="history-icon">
+                                    <i class="fas fa-code"></i>
+                                </div>
+                                <div class="history-details">
+                                    <div class="history-title">前端 v2.1.0</div>
+                                    <div class="history-meta">
+                                        <div class="history-time">
+                                            <i class="far fa-clock"></i> 2小时前
+                                        </div>
+                                        <div>成功</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="status-badge status-running">完成</span>
+                        </div>
+
+                        <div class="history-item">
+                            <div class="history-info">
+                                <div class="history-icon">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                                <div class="history-details">
+                                    <div class="history-title">后端 v2.0.9</div>
+                                    <div class="history-meta">
+                                        <div class="history-time">
+                                            <i class="far fa-clock"></i> 1天前
+                                        </div>
+                                        <div>成功</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="status-badge status-running">完成</span>
+                        </div>
+
+                        <div class="history-item">
+                            <div class="history-info">
+                                <div class="history-icon">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <div class="history-details">
+                                    <div class="history-title">数据库迁移</div>
+                                    <div class="history-meta">
+                                        <div class="history-time">
+                                            <i class="far fa-clock"></i> 3天前
+                                        </div>
+                                        <div>成功</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="status-badge status-running">完成</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主内容区域 -->
+            <div class="main-content">
+                <!-- 集群状态 -->
+                <div class="monitor-card">
+                    <div class="monitor-header">
+                        <h2 class="monitor-title">
+                            <i class="fas fa-chart-line"></i> 集群资源监控
+                        </h2>
+                        <div class="monitor-actions">
+                            <button class="btn btn-sm btn-outline">
+                                <i class="fas fa-sync"></i> 刷新
+                            </button>
+                            <button class="btn btn-sm btn-outline">
+                                <i class="far fa-clock"></i> 24小时
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="cluster-stats">
+                        <div class="stat-card">
+                            <div class="stat-title">
+                                <i class="fas fa-microchip"></i> CPU 使用率
+                            </div>
+                            <div class="stat-value">32.5%</div>
+                            <div class="stat-change stat-up">
+                                <i class="fas fa-arrow-up"></i> 2.3% (24h)
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">
+                                <i class="fas fa-memory"></i> 内存使用率
+                            </div>
+                            <div class="stat-value">58.2%</div>
+                            <div class="stat-change stat-up">
+                                <i class="fas fa-arrow-up"></i> 5.1% (24h)
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">
+                                <i class="fas fa-hdd"></i> 存储使用率
+                            </div>
+                            <div class="stat-value">42.7%</div>
+                            <div class="stat-change stat-down">
+                                <i class="fas fa-arrow-down"></i> 1.2% (24h)
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">
+                                <i class="fas fa-network-wired"></i> 网络流量
+                            </div>
+                            <div class="stat-value">1.2 Gbps</div>
+                            <div class="stat-change stat-up">
+                                <i class="fas fa-arrow-up"></i> 15% (24h)
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">
+                                <i class="fas fa-tachometer-alt"></i> 平均延迟
+                            </div>
+                            <div class="stat-value">86 ms</div>
+                            <div class="stat-change stat-down">
+                                <i class="fas fa-arrow-down"></i> 12% (24h)
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">
+                                <i class="fas fa-heartbeat"></i> 健康状态
+                            </div>
+                            <div class="stat-value">98.7%</div>
+                            <div class="stat-change stat-up">
+                                <i class="fas fa-arrow-up"></i> 0.5% (24h)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container" id="cluster-chart"></div>
+                </div>
+
+                <!-- 节点状态 -->
+                <div class="monitor-card">
+                    <div class="monitor-header">
+                        <h2 class="monitor-title">
+                            <i class="fas fa-server"></i> 节点状态
+                        </h2>
+                        <div class="monitor-actions">
+                            <button class="btn btn-sm btn-outline">
+                                <i class="fas fa-plus"></i> 添加节点
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="node-list">
+                        <div class="node-item">
+                            <div class="node-info">
+                                <div class="node-status status-healthy"></div>
+                                <div>
+                                    <div class="node-name">k8s-master-01</div>
+                                    <div class="node-meta">
+                                        <div class="node-meta-item">
+                                            <i class="fas fa-tag"></i> v1.23.8
+                                        </div>
+                                        <div class="node-meta-item">
+                                            <i class="fas fa-map-marker-alt"></i> 上海
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="node-resources">
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill cpu-fill" style="width: 45%;"></div>
+                                    </div>
+                                    <div class="resource-label">CPU 45%</div>
+                                </div>
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill memory-fill" style="width: 62%;"></div>
+                                    </div>
+                                    <div class="resource-label">内存 62%</div>
+                                </div>
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill storage-fill" style="width: 38%;"></div>
+                                    </div>
+                                    <div class="resource-label">存储 38%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="node-item">
+                            <div class="node-info">
+                                <div class="node-status status-healthy"></div>
+                                <div>
+                                    <div class="node-name">k8s-worker-01</div>
+                                    <div class="node-meta">
+                                        <div class="node-meta-item">
+                                            <i class="fas fa-tag"></i> v1.23.8
+                                        </div>
+                                        <div class="node-meta-item">
+                                            <i class="fas fa-map-marker-alt"></i> 上海
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="node-resources">
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill cpu-fill" style="width: 68%;"></div>
+                                    </div>
+                                    <div class="resource-label">CPU 68%</div>
+                                </div>
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill memory-fill" style="width: 54%;"></div>
+                                    </div>
+                                    <div class="resource-label">内存 54%</div>
+                                </div>
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill storage-fill" style="width: 42%;"></div>
+                                    </div>
+                                    <div class="resource-label">存储 42%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="node-item">
+                            <div class="node-info">
+                                <div class="node-status status-warning"></div>
+                                <div>
+                                    <div class="node-name">k8s-worker-02</div>
+                                    <div class="node-meta">
+                                        <div class="node-meta-item">
+                                            <i class="fas fa-tag"></i> v1.23.8
+                                        </div>
+                                        <div class="node-meta-item">
+                                            <i class="fas fa-map-marker-alt"></i> 北京
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="node-resources">
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill cpu-fill" style="width: 82%;"></div>
+                                    </div>
+                                    <div class="resource-label">CPU 82%</div>
+                                </div>
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill memory-fill" style="width: 76%;"></div>
+                                    </div>
+                                    <div class="resource-label">内存 76%</div>
+                                </div>
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill storage-fill" style="width: 51%;"></div>
+                                    </div>
+                                    <div class="resource-label">存储 51%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="node-item">
+                            <div class="node-info">
+                                <div class="node-status status-critical"></div>
+                                <div>
+                                    <div class="node-name">k8s-worker-03</div>
+                                    <div class="node-meta">
+                                        <div class="node-meta-item">
+                                            <i class="fas fa-tag"></i> v1.23.8
+                                        </div>
+                                        <div class="node-meta-item">
+                                            <i class="fas fa-map-marker-alt"></i> 广州
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="node-resources">
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill cpu-fill" style="width: 92%;"></div>
+                                    </div>
+                                    <div class="resource-label">CPU 92%</div>
+                                </div>
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill memory-fill" style="width: 88%;"></div>
+                                    </div>
+                                    <div class="resource-label">内存 88%</div>
+                                </div>
+                                <div>
+                                    <div class="resource-bar">
+                                        <div class="resource-fill storage-fill" style="width: 65%;"></div>
+                                    </div>
+                                    <div class="resource-label">存储 65%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pod 状态 -->
+                <div class="monitor-card">
+                    <div class="monitor-header">
+                        <h2 class="monitor-title">
+                            <i class="fas fa-cubes"></i> Pod 状态
+                        </h2>
+                        <div class="monitor-actions">
+                            <button class="btn btn-sm btn-outline">
+                                <i class="fas fa-filter"></i> 筛选
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pod-list">
+                        <div class="pod-card">
+                            <div class="pod-header">
+                                <div class="pod-name">
+                                    <i class="fas fa-cube"></i> ecommerce-frontend-7f8d6
+                                </div>
+                                <div class="pod-status status-running">运行中</div>
+                            </div>
+                            <div class="pod-body">
+                                <div class="pod-meta">
+                                    <div>节点: k8s-worker-01</div>
+                                    <div>运行时间: 2天</div>
+                                </div>
+                                <div class="pod-resources">
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">0.8 / 2</div>
+                                        <div class="pod-resource-label">CPU (核)</div>
+                                    </div>
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">1.2 / 4</div>
+                                        <div class="pod-resource-label">内存 (GB)</div>
+                                    </div>
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">3</div>
+                                        <div class="pod-resource-label">重启</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pod-card">
+                            <div class="pod-header">
+                                <div class="pod-name">
+                                    <i class="fas fa-cube"></i> ecommerce-backend-5a4b3
+                                </div>
+                                <div class="pod-status status-running">运行中</div>
+                            </div>
+                            <div class="pod-body">
+                                <div class="pod-meta">
+                                    <div>节点: k8s-worker-02</div>
+                                    <div>运行时间: 1天</div>
+                                </div>
+                                <div class="pod-resources">
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">1.5 / 2</div>
+                                        <div class="pod-resource-label">CPU (核)</div>
+                                    </div>
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">2.8 / 4</div>
+                                        <div class="pod-resource-label">内存 (GB)</div>
+                                    </div>
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">1</div>
+                                        <div class="pod-resource-label">重启</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pod-card">
+                            <div class="pod-header">
+                                <div class="pod-name">
+                                    <i class="fas fa-cube"></i> ecommerce-db-9c8d7
+                                </div>
+                                <div class="pod-status status-running">运行中</div>
+                            </div>
+                            <div class="pod-body">
+                                <div class="pod-meta">
+                                    <div>节点: k8s-worker-01</div>
+                                    <div>运行时间: 3天</div>
+                                </div>
+                                <div class="pod-resources">
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">0.6 / 4</div>
+                                        <div class="pod-resource-label">CPU (核)</div>
+                                    </div>
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">6.4 / 8</div>
+                                        <div class="pod-resource-label">内存 (GB)</div>
+                                    </div>
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">0</div>
+                                        <div class="pod-resource-label">重启</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pod-card">
+                            <div class="pod-header">
+                                <div class="pod-name">
+                                    <i class="fas fa-cube"></i> ecommerce-cache-2b3c4
+                                </div>
+                                <div class="pod-status status-pending">部署中</div>
+                            </div>
+                            <div class="pod-body">
+                                <div class="pod-meta">
+                                    <div>节点: k8s-worker-03</div>
+                                    <div>运行时间: 5分钟</div>
+                                </div>
+                                <div class="pod-resources">
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">0.2 / 2</div>
+                                        <div class="pod-resource-label">CPU (核)</div>
+                                    </div>
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">0.8 / 4</div>
+                                        <div class="pod-resource-label">内存 (GB)</div>
+                                    </div>
+                                    <div class="pod-resource">
+                                        <div class="pod-resource-value">0</div>
+                                        <div class="pod-resource-label">重启</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 服务监控 -->
+                <div class="monitor-card">
+                    <div class="monitor-header">
+                        <h2 class="monitor-title">
+                            <i class="fas fa-chart-pie"></i> 服务监控
+                        </h2>
+                        <div class="monitor-actions">
+                            <button class="btn btn-sm btn-outline">
+                                <i class="fas fa-expand"></i> 全屏
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chart-container" id="service-chart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        try {
+            const clusterChart = echarts.init(document.getElementById('cluster-chart'));
+            clusterChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                legend: {
+                    data: ['CPU使用率', '内存使用率', '网络流量', '存储使用率'],
+                    textStyle: {
+                        color: '#6c757d'
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                    axisLine: {
+                        lineStyle: {
+                            color: '#dee2e6'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#6c757d'
+                    }
+                },
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: '使用率',
+                        axisLine: {
+                            lineStyle: {
+                                color: '#dee2e6'
+                            }
+                        },
+                        axisLabel: {
+                            color: '#6c757d',
+                            formatter: '{value}%'
+                        },
+                        splitLine: {
+                            lineStyle: {
+                                color: '#f1f1f1'
+                            }
+                        }
+                    },
+                    {
+                        type: 'value',
+                        name: '网络流量',
+                        axisLine: {
+                            lineStyle: {
+                                color: '#dee2e6'
+                            }
+                        },
+                        axisLabel: {
+                            color: '#6c757d'
+                        },
+                        splitLine: {
+                            show: false
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: 'CPU使用率',
+                        type: 'line',
+                        smooth: true,
+                        data: [30, 28, 35, 40, 36, 32, 38],
+                        lineStyle: {
+                            width: 3,
+                            color: '#4361ee'
+                        },
+                        itemStyle: {
+                            color: '#4361ee'
+                        }
+                    },
+                    {
+                        name: '内存使用率',
+                        type: 'line',
+                        smooth: true,
+                        data: [50, 52, 48, 55, 60, 58, 62],
+                        lineStyle: {
+                            width: 3,
+                            color: '#4895ef'
+                        },
+                        itemStyle: {
+                            color: '#4895ef'
+                        }
+                    },
+                    {
+                        name: '网络流量',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        smooth: true,
+                        data: [80, 75, 85, 90, 95, 100, 110],
+                        lineStyle: {
+                            width: 3,
+                            color: '#3f37c9'
+                        },
+                        itemStyle: {
+                            color: '#3f37c9'
+                        }
+                    },
+                    {
+                        name: '存储使用率',
+                        type: 'line',
+                        smooth: true,
+                        data: [40, 42, 45, 43, 41, 39, 38],
+                        lineStyle: {
+                            width: 3,
+                            color: '#4cc9f0'
+                        },
+                        itemStyle: {
+                            color: '#4cc9f0'
+                        }
+                    }
+                ],
+                color: ['#4361ee', '#4895ef', '#3f37c9', '#4cc9f0']
+            });
+        } catch (error) {
+            console.error('图表初始化失败:', error);
+        }
+
+        // 初始化服务监控图表
+        const serviceChart = echarts.init(document.getElementById('service-chart'));
+        serviceChart.setOption({
+            tooltip: {
+                trigger: 'item'
+            },
+            legend: {
+                orient: 'vertical',
+                right: 10,
+                top: 'center',
+                textStyle: {
+                    color: '#6c757d'
+                }
+            },
+            series: [
+                {
+                    name: '服务流量',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: false,
+                        position: 'center'
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: '18',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    labelLine: {
+                        show: false
+                    },
+                    data: [
+                        { value: 1048, name: '前端服务' },
+                        { value: 735, name: '后端服务' },
+                        { value: 580, name: '数据库' },
+                        { value: 484, name: '缓存服务' },
+                        { value: 300, name: '消息队列' }
+                    ]
+                }
+            ],
+            color: ['#4361ee', '#4895ef', '#3f37c9', '#4cc9f0', '#7209b7']
+        });
+
+        // 响应窗口大小变化
+        window.addEventListener('resize', function () {
+            clusterChart.resize();
+            serviceChart.resize();
+        });
+
+        // 文件上传功能
+        document.querySelectorAll('.upload-zone').forEach(zone => {
+            zone.addEventListener('click', function () {
+                const fileInput = this.nextElementSibling;
+                fileInput.click();
+            });
+        });
+
+        // 模拟文件上传显示
+        document.getElementById('backend-files').addEventListener('change', function (e) {
+            const fileList = document.getElementById('backend-file-list');
+            fileList.innerHTML = '';
+
+            Array.from(e.target.files).forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-icon">
+                        <i class="fas fa-file-code"></i>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-details">
+                            <span class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                            <span class="file-type">${file.type || 'application/octet-stream'}</span>
+                        </div>
+                    </div>
+                    <div class="file-remove">
+                        <i class="fas fa-times"></i>
+                    </div>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        });
+
+        document.getElementById('frontend-files').addEventListener('change', function (e) {
+            const fileList = document.getElementById('frontend-file-list');
+            fileList.innerHTML = '';
+
+            Array.from(e.target.files).forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-icon">
+                        <i class="fas fa-file-code"></i>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-details">
+                            <span class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                            <span class="file-type">${file.type || 'application/octet-stream'}</span>
+                        </div>
+                    </div>
+                    <div class="file-remove">
+                        <i class="fas fa-times"></i>
+                    </div>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        });
+
+        document.getElementById('db-files').addEventListener('change', function (e) {
+            const fileList = document.getElementById('db-file-list');
+            fileList.innerHTML = '';
+
+            Array.from(e.target.files).forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-details">
+                            <span class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                            <span class="file-type">${file.type || 'application/octet-stream'}</span>
+                        </div>
+                    </div>
+                    <div class="file-remove">
+                        <i class="fas fa-times"></i>
+                    </div>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        });
+    </script>
+</body>
+</html>

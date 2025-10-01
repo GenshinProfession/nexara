@@ -1,32 +1,23 @@
 package com.nexara.server.core.deploy.step.buildIn;
 
-import com.nexara.server.core.deploy.step.DeployContext;
-import com.nexara.server.core.deploy.step.DeployStep;
-import com.nexara.server.core.deploy.step.StepStatus;
-import com.nexara.server.core.deploy.step.manage.StepConstants;
+import com.nexara.server.core.deploy.step.TaskContext;
+import com.nexara.server.core.deploy.step.TaskStep;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
+/**
+ * @author BlueJack
+ */
 @Component
 @Log4j2
-public class TestSecondStep implements DeployStep {
-    @Override
-    public String getName() {
-        return "测试步骤二";
+public class TestSecondStep extends TaskStep {
+
+    protected TestSecondStep() {
+        super("测试步骤二", "test-second-step");
     }
 
     @Override
-    public String getKey() {
-        return "test-second-step";
-    }
-
-    @Override
-    public StepStatus getStatus() {
-        return StepStatus.PENDING;
-    }
-
-    @Override
-    public void execute(DeployContext context) {
+    public void doExecute(TaskContext context) {
         log.info("执行测试步骤二...");
         // 模拟一些工作
         try {

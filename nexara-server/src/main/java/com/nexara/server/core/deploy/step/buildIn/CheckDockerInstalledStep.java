@@ -1,18 +1,18 @@
 //package com.nexara.server.core.deploy.step.buildIn;
 //
-//import com.nexara.server.core.deploy.step.DeployContext;
-//import com.nexara.server.core.deploy.step.DeployStep;
+//import com.nexara.server.core.deploy.step.TaskContext;
+//import com.nexara.server.core.deploy.step.TaskStep;
 //import com.nexara.server.core.deploy.step.StepResult;
 //import com.nexara.server.core.exception.connect.CommandExecutionException;
 //
-//public class CheckDockerInstalledStep implements DeployStep {
+//public class CheckDockerInstalledStep implements TaskStep {
 //    @Override
 //    public String getName() {
 //        return "检查docker是否安装";
 //    }
 //
 //    @Override
-//    public void execute(DeployContext context) {
+//    public void execute(TaskContext context) {
 //        boolean installed = context.withConnection(conn -> {
 //            try{
 //                conn.executeCommand("docker --version");

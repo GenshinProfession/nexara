@@ -1,4 +1,4 @@
-package com.nexara.server.core.task;
+package com.nexara.server.util.task;
 
 import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.mapper.ServerStatusMapper;

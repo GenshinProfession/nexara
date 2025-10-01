@@ -1,7 +1,7 @@
 //package com.nexara.server.core.deploy.step.buildIn;
 //
-//import com.nexara.server.core.deploy.step.DeployContext;
-//import com.nexara.server.core.deploy.step.DeployStep;
+//import com.nexara.server.core.deploy.step.TaskContext;
+//import com.nexara.server.core.deploy.step.TaskStep;
 //import com.nexara.server.core.deploy.step.StepResult;
 //import com.nexara.server.core.docker.DockerComposeFactory;
 //import com.nexara.server.polo.model.DeployTaskDTO;
@@ -10,7 +10,7 @@
 //
 //@Component
 //@RequiredArgsConstructor
-//public class DockerComposeGeneratorStep implements DeployStep {
+//public class DockerComposeGeneratorStep implements TaskStep {
 //
 //    private final DockerComposeFactory dockerComposeFactory;
 //
@@ -30,7 +30,7 @@
 //    }
 //
 //    @Override
-//    public void execute(DeployContext context) {
+//    public void execute(TaskContext context) {
 //        // 1. 添加执行状态
 //        context.addResult(new StepResult(getName(), false,"正在生成"));
 //

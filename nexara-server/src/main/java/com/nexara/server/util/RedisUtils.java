@@ -1,13 +1,14 @@
 package com.nexara.server.util;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
@@ -71,6 +72,37 @@ public class RedisUtils {
     }
 
     /**
+     * 获取值并转换为指定类型（类型安全版本）
+     * @param key Redis键
+     * @param type 目标类型
+     * @return 转换后的对象，如果转换失败返回null
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T get(String key, Class<T> type) {
+        try {
+            Object value = redisTemplate.opsForValue().get(key);
+            if (value == null) {
+                return null;
+            }
+            // 检查类型兼容性，避免强制类型转换异常
+            if (type.isInstance(value)) {
+                return type.cast(value);
+            }
+            // 如果使用了Jackson序列化，尝试重新序列化转换
+            if (redisTemplate.getValueSerializer() instanceof Jackson2JsonRedisSerializer) {
+                ObjectMapper mapper = new ObjectMapper();
+                // 使用Jackson的readValue方法转换对象
+                return mapper.convertValue(value, type);
+            }
+            log.warn("Failed to convert value to type {}", type.getName());
+            return null;
+        } catch (Exception e) {
+            log.error("Error getting value from Redis for key {}: {}", key, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Hash 结构 - 设置值
      */
     public void hSet(String key, String hashKey, Object value) {
@@ -82,6 +114,37 @@ public class RedisUtils {
      */
     public Object hGet(String key, String hashKey) {
         return redisTemplate.opsForHash().get(key, hashKey);
+    }
+
+    /**
+     * Hash 结构 - 获取单个字段值并转换为指定类型（类型安全版本）
+     * @param key Redis键
+     * @param hashKey Hash字段键
+     * @param type 目标类型
+     * @return 转换后的对象，如果转换失败返回null
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T hGet(String key, String hashKey, Class<T> type) {
+        try {
+            Object value = redisTemplate.opsForHash().get(key, hashKey);
+            if (value == null) {
+                return null;
+            }
+            // 检查类型兼容性
+            if (type.isInstance(value)) {
+                return type.cast(value);
+            }
+            // 如果使用了Jackson序列化，尝试重新序列化转换
+            if (redisTemplate.getValueSerializer() instanceof Jackson2JsonRedisSerializer) {
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.convertValue(value, type);
+            }
+            log.warn("Failed to convert hash value to type {}", type.getName());
+            return null;
+        } catch (Exception e) {
+            log.error("Error getting hash value from Redis for key {} and hashKey {}: {}", key, hashKey, e.getMessage());
+            return null;
+        }
     }
 
     /**

@@ -2,18 +2,16 @@ package com.nexara.server.util.test;
 
 import com.nexara.server.ServerApplication;
 import com.nexara.server.core.connect.ConnectionFactory;
-import com.nexara.server.core.deploy.DeployProjectManager;
-import com.nexara.server.core.deploy.step.DeploymentStatusTree;
-import com.nexara.server.core.deploy.step.StepStatus;
+import com.nexara.server.core.deploy.TaskExecute;
+import com.nexara.server.core.manager.InitEnvTaskManager;
+import com.nexara.server.core.manager.PortCheckTaskManager;
+import com.nexara.server.core.manager.ServerMonitorManager;
 import com.nexara.server.core.os.OSFactory;
 import com.nexara.server.mapper.ServerInfoMapper;
 import com.nexara.server.mapper.ServerStatusMapper;
 import com.nexara.server.polo.enums.CodeLanguage;
 import com.nexara.server.polo.enums.ServiceType;
 import com.nexara.server.polo.model.*;
-import com.nexara.server.core.manager.InitEnvTaskManager;
-import com.nexara.server.core.manager.PortCheckTaskManager;
-import com.nexara.server.core.manager.ServerMonitorManager;
 import com.nexara.server.util.RedisUtils;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -23,13 +21,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @SpringBootTest(classes = ServerApplication.class)
 @Log4j2
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:sqlite:C:/Users/BlueJack/Desktop/GraduationDesign/nexara/data/nexara.db"
+        "spring.datasource.url=jdbc:sqlite:C:/Users/BlueJack/Desktop/nexara/data/nexara.db"
 })
 public class RedisIntegrationTest {
 
@@ -55,19 +56,19 @@ public class RedisIntegrationTest {
     private ConnectionFactory connectionFactory;
 
     @Autowired
-    private DeployProjectManager deployProjectManager;
+    private TaskExecute deployProjectManager;
 
     @Autowired
     private RedisUtils redisUtils;
 
 
     @Test
-    public void TestDeploy(){
+    public void TestDeploy() throws InterruptedException {
         // 目前咱们后端文件的位置在这呢
-        String localFilePath = "C:\\Users\\BlueJack\\Desktop\\GraduationDesign\\nexara\\file\\formal\\app.jar";
+        String localFilePath = "C:\\Users\\BlueJack\\Desktop\\nexara\\file\\formal\\app.jar";
 
         // 目前咱们前端文件的位置在这呢
-        String localFrontFilePath = "C:\\Users\\BlueJack\\Desktop\\GraduationDesign\\nexara\\file\\formal\\dist";
+        String localFrontFilePath = "C:\\Users\\BlueJack\\Desktop\\nexara\\file\\formal\\dist";
 
         DeployTaskDTO dto = new DeployTaskDTO();
 
@@ -88,6 +89,7 @@ public class RedisIntegrationTest {
         };
         String randomDescription = descriptions[new Random().nextInt(descriptions.length)];
         dto.setProjectDescription(randomDescription);
+
 
         // 新增一个后端文件类
         List<BackendDeployInfo> backendDeployInfos = new ArrayList<>();
@@ -114,65 +116,16 @@ public class RedisIntegrationTest {
         dto.setFrontends(frontendDeployInfos);
 
         // 该前后端暂时都无需数据库
-
-        deployProjectManager.deployProject(dto);
-    }
-
-    @Test
-    public void TestGroup(){
-        // 1. 准备测试数据
         ServerInfo myApp = serverInfoMapper.findByServerId("my_app");
-        DeployTaskDTO dto =  new DeployTaskDTO();
         dto.setServerInfo(myApp);
         dto.setProjectName("test-project");
 
-        // 2. 创建部署计划
-        System.out.println("=== 创建部署计划 ===");
-        DeploymentStatusTree statusTree = deployProjectManager.buildDeploymentPipeline(dto);
-        String deploymentId = statusTree.getDeploymentId();
-        System.out.println("部署ID: " + deploymentId);
-        System.out.println("初始状态: " + statusTree.getStatus());
-
-        // 3. 开始异步部署
-        System.out.println("\n=== 开始部署 ===");
+        String deploymentId = deployProjectManager.buildDeploymentPipeline(dto);
         deployProjectManager.startDeployment(deploymentId);
 
-        // 4. 模拟前端轮询查询状态
-        System.out.println("\n=== 模拟前端轮询 ===");
-        for (int i = 1; i <= 10; i++) {
-            try {
-                Thread.sleep(1000); // 每秒查询一次
-
-                DeploymentStatusTree currentStatus = deployProjectManager.getDeploymentStatus(deploymentId);
-                if (currentStatus != null) {
-                    System.out.println("第 " + i + " 秒 - 状态: " + currentStatus.getStatus() +
-                            ", 消息: " + currentStatus.getMessage());
-
-                    // 如果部署完成，停止轮询
-                    if (currentStatus.getStatus() == StepStatus.SUCCESS ||
-                            currentStatus.getStatus() == StepStatus.FAILED ||
-                            currentStatus.getStatus() == StepStatus.CANCELLED) {
-                        System.out.println("部署完成，最终状态: " + currentStatus.getStatus());
-                        break;
-                    }
-                } else {
-                    System.out.println("第 " + i + " 秒 - 状态信息不存在");
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
-
-        // 5. 获取最终状态
-        DeploymentStatusTree finalStatus = deployProjectManager.getDeploymentStatus(deploymentId);
-        System.out.println("\n=== 最终结果 ===");
-        if (finalStatus != null) {
-            System.out.println("部署ID: " + finalStatus.getDeploymentId());
-            System.out.println("最终状态: " + finalStatus.getStatus());
-            System.out.println("最终消息: " + finalStatus.getMessage());
-        } else {
-            System.out.println("部署状态信息已丢失");
+        for(int i = 0 ; i < 100 ; i ++ ){
+            Thread.sleep(2000);
+            System.out.println(deployProjectManager.getDeploymentStatus(deploymentId));
         }
     }
 

@@ -1,18 +1,11 @@
-package com.nexara.server.core.deploy;
+package com.nexara.server.core.deploy.step.manage;
 
 import com.nexara.server.core.connect.ConnectionFactory;
 import com.nexara.server.core.connect.product.ServerConnection;
 import com.nexara.server.mapper.ServerInfoMapper;
-import com.nexara.server.polo.model.DeployTaskDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 
 import static com.nexara.server.util.Constants.REMOTE_UPLOAD_PREFIX;
 

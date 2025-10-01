@@ -1,9 +1,7 @@
 package com.nexara.server.core.deploy.step.buildIn;
 
-import com.nexara.server.core.deploy.step.DeployContext;
-import com.nexara.server.core.deploy.step.DeployStep;
-import com.nexara.server.core.deploy.step.StepStatus;
-import lombok.RequiredArgsConstructor;
+import com.nexara.server.core.deploy.step.TaskContext;
+import com.nexara.server.core.deploy.step.TaskStep;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -11,28 +9,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+/**
+ * @author BlueJack
+ */
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class CreateProjectStructureStep implements DeployStep {
+public class CreateProjectStructureStep extends TaskStep {
 
-    @Override
-    public String getName() {
-        return "创建项目目录结构";
+    public CreateProjectStructureStep() {
+        super("创建项目目录结构", "create-project-structure");
     }
 
     @Override
-    public String getKey() {
-        return "create-project-structure";
-    }
-
-    @Override
-    public StepStatus getStatus() {
-        return StepStatus.PENDING;
-    }
-
-    @Override
-    public void execute(DeployContext context) {
+    protected void doExecute(TaskContext context) {
         try {
             String projectPath = context.getProjectPath();
 
@@ -51,4 +40,5 @@ public class CreateProjectStructureStep implements DeployStep {
             throw new RuntimeException("创建项目目录结构失败: " + e.getMessage(), e);
         }
     }
+
 }

@@ -1,9 +1,7 @@
 package com.nexara.server.core.deploy.step.buildIn;
 
-import com.nexara.server.core.deploy.step.DeployContext;
-import com.nexara.server.core.deploy.step.DeployStep;
-import com.nexara.server.core.deploy.step.StepStatus;
-import lombok.RequiredArgsConstructor;
+import com.nexara.server.core.deploy.step.TaskContext;
+import com.nexara.server.core.deploy.step.TaskStep;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -15,26 +13,14 @@ import java.nio.file.StandardCopyOption;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class OrganizeFilesStep implements DeployStep {
+public class OrganizeFilesStep extends TaskStep {
 
-    @Override
-    public String getName() {
-        return "规范化项目文件路径";
+    protected OrganizeFilesStep() {
+        super("规范化项目文件路径", "organize-project-files");
     }
 
     @Override
-    public String getKey() {
-        return "organize-project-files";
-    }
-
-    @Override
-    public StepStatus getStatus() {
-        return StepStatus.PENDING;
-    }
-
-    @Override
-    public void execute(DeployContext context) {
+    protected void doExecute(TaskContext context) {
         try {
             String projectPath = context.getProjectPath();
             var dto = context.getTask();

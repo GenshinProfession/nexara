@@ -1,6 +1,6 @@
-package com.nexara.server.core.deploy.step;
+package com.nexara.server.core.task;
 
-public enum StepStatus {
+public enum TaskStatus {
     PENDING,
     RUNNING,
     SUCCESS,

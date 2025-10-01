@@ -1,16 +1,16 @@
 //package com.nexara.server.core.deploy.step.buildIn;
 //
-//import com.nexara.server.core.deploy.step.DeployContext;
-//import com.nexara.server.core.deploy.step.DeployStep;
+//import com.nexara.server.core.deploy.step.TaskContext;
+//import com.nexara.server.core.deploy.step.TaskStep;
 //
-//public class DockerInstallStep implements DeployStep {
+//public class DockerInstallStep implements TaskStep {
 //    @Override
 //    public String getName() {
 //        return "";
 //    }
 //
 //    @Override
-//    public void execute(DeployContext context) {
+//    public void execute(TaskContext context) {
 //
 //    }
 //}

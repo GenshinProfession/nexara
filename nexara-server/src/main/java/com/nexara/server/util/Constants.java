@@ -16,4 +16,6 @@ public final class Constants {
     // 部署项目前缀
     public static final String REDIS_DEPLOYMENT_TASK_PREFIX = "deployment:";
 
+    // 统一任务状态前缀
+    public static final String REDIS_TASK_STATUS_PREFIX = "task:status:";
 }

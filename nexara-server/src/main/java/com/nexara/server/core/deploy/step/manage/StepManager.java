@@ -1,6 +1,6 @@
 package com.nexara.server.core.deploy.step.manage;
 
-import com.nexara.server.core.deploy.step.DeployStep;
+import com.nexara.server.core.deploy.step.TaskStep;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -22,7 +22,7 @@ public class StepManager {
     /**
      * 获取Step实例
      */
-    public <T extends DeployStep> T getStep(Class<T> stepClass) {
+    public <T extends TaskStep> T getStep(Class<T> stepClass) {
         return applicationContext.getBean(stepClass);
     }
 
@@ -30,7 +30,7 @@ public class StepManager {
      * 批量获取Step实例
      */
     @SafeVarargs
-    public final List<DeployStep> getSteps(Class<? extends DeployStep>... stepClasses) {
+    public final List<TaskStep> getSteps(Class<? extends TaskStep>... stepClasses) {
         return Arrays.stream(stepClasses)
                 .map(this::getStep)
                 .collect(Collectors.toList());
@@ -39,8 +39,8 @@ public class StepManager {
     /**
      * 根据Step名称获取实例（如果需要）
      */
-    public DeployStep getStepByName(String stepName) {
-        Map<String, DeployStep> stepBeans = applicationContext.getBeansOfType(DeployStep.class);
+    public TaskStep getStepByName(String stepName) {
+        Map<String, TaskStep> stepBeans = applicationContext.getBeansOfType(TaskStep.class);
         return stepBeans.values().stream()
                 .filter(step -> step.getName().equals(stepName))
                 .findFirst()
@@ -50,7 +50,7 @@ public class StepManager {
     /**
      * 获取所有注册的Step（用于监控或调试）
      */
-    public Map<String, DeployStep> getAllSteps() {
-        return applicationContext.getBeansOfType(DeployStep.class);
+    public Map<String, TaskStep> getAllSteps() {
+        return applicationContext.getBeansOfType(TaskStep.class);
     }
 }
