@@ -5,12 +5,6 @@ import com.nexara.server.core.code.PackageFactory;
 import com.nexara.server.polo.enums.CodeLanguage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import static com.nexara.server.core.code.PackageFactory.detectorMap;
 
 /**

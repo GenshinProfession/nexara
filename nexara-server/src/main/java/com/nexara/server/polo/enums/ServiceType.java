@@ -1,11 +1,12 @@
 package com.nexara.server.polo.enums;
 
+import lombok.Generated;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import lombok.Generated;
 
 public enum ServiceType {
     DOCKER("Docker Engine", 2375),
@@ -43,33 +44,33 @@ public enum ServiceType {
     }
 
     public List<Integer> getPortsToCheck() {
-        return (List<Integer>)(this.isRange ? (List)IntStream.rangeClosed((Integer)this.ports.get(0), (Integer)this.ports.get(1)).boxed().collect(Collectors.toList()) : new ArrayList(this.ports));
+        if (this.isRange) {
+            return IntStream.rangeClosed(this.ports.get(0), this.ports.get(1))
+                    .boxed()
+                    .collect(Collectors.toList());
+        }
+        return new ArrayList<>(this.ports);
     }
 
-    public int getDefaultPort() {
-        return (Integer)this.ports.getFirst();
-    }
+    public String getPortRepresentation() {
+        if (this.isRange) {
+            // Return a range in the format "8000-10000"
+            return this.ports.get(0) + "-" + this.ports.get(1);
+        }
 
-    public int getRangeStart() {
-        return (Integer)this.ports.getFirst();
-    }
+        // If there are multiple ports, return in the format "[7000, 3534]"
+        if (this.ports.size() > 1) {
+            return this.ports.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(", ", "[", "]"));
+        }
 
-    public int getRangeEnd() {
-        return (Integer)this.ports.get(1);
+        // If there is a single port, return the port as a string
+        return String.valueOf(this.ports.get(0));
     }
 
     @Generated
     public String getDisplayName() {
         return this.displayName;
-    }
-
-    @Generated
-    public List<Integer> getPorts() {
-        return this.ports;
-    }
-
-    @Generated
-    public boolean isRange() {
-        return this.isRange;
     }
 }
